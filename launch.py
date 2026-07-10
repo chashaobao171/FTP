@@ -725,7 +725,8 @@ def api_register():
     if len(username) < 3: return jsonify({'success': False, 'msg': '用户名长度不得低于3位'})
     if len(password) < 6: return jsonify({'success': False, 'msg': '密码长度不得低于6位'})
     if '@' not in email: return jsonify({'success': False, 'msg': '邮箱格式错误'})
-    if us.user_exists(username): return jsonify({'success': False, 'msg': '用户名已存在'})
+    if us.user_exists(username) and us.get_user(username).get('status') != 'deleted':
+        return jsonify({'success': False, 'msg': '用户名已存在'})
     us.add_user(username, {
         'username': username, 'password': encrypt.hash_password(password),
         'email': email, 'level': 1, 'status': 'pending',

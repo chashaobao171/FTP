@@ -582,14 +582,16 @@
     function closeModal(id){ document.getElementById(id).classList.remove('show'); }
     function confirmApprove(){
       var level = parseInt(document.getElementById('modal-level').value);
-      fetch('/api/users/set-level', {
+      fetch('/api/users/approve', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({username:_approve_username, level:level})
+        body: JSON.stringify({username:_approve_username, action:'approve', level:level})
       }).then(r=>r.json()).then(function(d){
         closeModal('modal-approve');
         if(d.success){
-          showMsg('users-msg','✅ 已将 '+_approve_username+' 设为 Lv'+level+'（用户端 8 秒内自动同步）','success');
+          showMsg('users-msg','✅ 已批准 '+_approve_username+' 为 Lv'+level+'（用户端 8 秒内自动同步）','success');
           refreshUsers();
+        } else {
+          showMsg('users-msg','❌ 操作失败: '+d.msg,'error');
         }
       });
     }
