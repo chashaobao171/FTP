@@ -128,6 +128,12 @@
       background:var(--surface);color:var(--text);font-size:13px;width:100%;
     }
     input[type="file"]{padding:6px;}
+    select{
+      padding:8px 11px;border:1px solid var(--border-strong);border-radius:6px;
+      background:var(--surface);color:var(--text);font-size:13px;width:100%;
+      font-family:inherit;cursor:pointer;
+    }
+    select:focus{outline:2px solid var(--primary-soft);border-color:var(--primary);}
 
     .field{margin-bottom:10px;}
     .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:4px;}
@@ -288,22 +294,32 @@
     </div>
 
     <!-- 上传测试 -->
-    <h2 style="margin-top:30px;">📤 上传测试文件</h2>
-    <p class="lead">上传的文件会自动加密存到 <span class="mono">.encrypted/</span>，同时解密副本存到 <span class="mono">.decrypted/</span>。</p>
+    <h2 style="margin-top:30px;">📤 上传文件</h2>
+    <p class="lead">上传的文件会自动 <b>DES-CBC 加密</b> 存到 <span class="mono">ftp_root/&lt;密级&gt;/</span>，同时演示副本存到 <span class="mono">.encrypted/</span> 和 <span class="mono">.decrypted/</span>。<br>请选择<b>密级</b>（公开 / 一般 / 高级 / 特殊），只能上传到自己等级及以下目录。</p>
 
     <div class="card">
       <div class="card-body">
         <form id="form">
-          <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:14px;">
             <div class="field">
               <label>上传者用户名</label>
               <input type="text" id="username" placeholder="如：alice" required>
+            </div>
+            <div class="field">
+              <label>密级 <span style="color:var(--text-mute);font-weight:400;">(BLP)</span></label>
+              <select id="level" required>
+                <option value="公开" selected>公开 (Lv1) - 全员可访问</option>
+                <option value="一般">一般 (Lv2) - 注册用户可访问</option>
+                <option value="高级">高级 (Lv3) - 一般用户及以上</option>
+                <option value="特殊">特殊 (Lv4) - 高级用户及以上</option>
+              </select>
             </div>
             <div class="field">
               <label>选择文件（可多选）</label>
               <input type="file" id="file" multiple required>
             </div>
           </div>
+          <div id="user-level-hint" style="font-size:11px;color:var(--text-mute);margin-bottom:8px;font-family:'JetBrains Mono',monospace;">当前用户等级：<span id="cur-level">--</span>（仅显示可上传的密级）</div>
           <button id="btn" type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
             🚀 上传到服务器（自动加密 + 解密）
           </button>
@@ -440,6 +456,7 @@
       const msg = document.getElementById('msg');
       const files = document.getElementById('file').files;
       const username = document.getElementById('username').value.trim();
+      const level = document.getElementById('level').value;
       if(!files.length || !username) return;
       btn.disabled = true; btn.textContent = '上传中…';
       msg.innerHTML = '';
@@ -456,6 +473,7 @@
         const fd = new FormData();
         fd.append('file', f);
         fd.append('username', username);
+        fd.append('level', level);                          // 新增：密级参数
         try{
           const r = await fetch('/api/upload',{method:'POST',body:fd});
           const j = await r.json();
@@ -463,7 +481,8 @@
         } catch(err){ fail++; }
       }
       msg.className = 'msg ' + (fail ? 'msg-err' : 'msg-ok');
-      msg.textContent = '完成：成功 ' + ok + '，失败 ' + fail;
+      msg.textContent = (fail ? ('⚠️ 部分失败：成功 ' + ok + '，失败 ' + fail)
+                              : ('✅ 成功上传 ' + ok + ' 个文件到 [' + level + ']'));
       document.getElementById('file').value = '';
       btn.disabled = false; btn.textContent = '🚀 上传到服务器（自动加密 + 解密）';
       loadDir('encrypted'); loadDir('decrypted');
@@ -472,6 +491,51 @@
         await demoUploadFlow(firstFileName, firstFileText);
       }
     };
+
+    // 用户名填好后自动拉一次用户等级，限制下拉只能选 ≤ 用户等级的密级
+    const LEVEL_NUM = {'公开':1, '一般':2, '高级':3, '特殊':4};
+    const LEVEL_TEXT = {1:'公开', 2:'一般', 3:'高级', 4:'特殊'};
+    async function refreshUserLevel(){
+      const username = document.getElementById('username').value.trim();
+      const cur = document.getElementById('cur-level');
+      const select = document.getElementById('level');
+      if(!username){ cur.textContent = '--'; enableAllLevels(); return; }
+      try{
+        const r = await fetch('/api/client/info?username=' + encodeURIComponent(username));
+        const j = await r.json();
+        if(j.success){
+          const lv = j.level || 1;
+          cur.textContent = LEVEL_TEXT[lv] + ' (Lv' + lv + ')';
+          cur.style.color = lv >= 4 ? 'var(--danger)' : (lv >= 3 ? 'var(--amber)' : 'var(--primary)');
+          // 禁用高于用户等级的密级
+          for(const opt of select.options){
+            const optLv = LEVEL_NUM[opt.value] || 1;
+            opt.disabled = optLv > lv;
+          }
+          // 如果当前选中的密级被禁用了，降级到最大可访问
+          if(LEVEL_NUM[select.value] > lv){
+            for(let i = select.options.length - 1; i >= 0; i--){
+              if(!select.options[i].disabled){
+                select.value = select.options[i].value;
+                break;
+              }
+            }
+          }
+        } else {
+          cur.textContent = '⚠️ ' + (j.msg||'用户未登录');
+          cur.style.color = 'var(--danger)';
+        }
+      } catch(e){
+        cur.textContent = '⚠️ 查询失败';
+        cur.style.color = 'var(--danger)';
+      }
+    }
+    function enableAllLevels(){
+      const select = document.getElementById('level');
+      for(const opt of select.options) opt.disabled = false;
+    }
+    document.getElementById('username').addEventListener('change', refreshUserLevel);
+    document.getElementById('username').addEventListener('blur', refreshUserLevel);
 
     async function demoUploadFlow(name, text){
       try{

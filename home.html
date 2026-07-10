@@ -176,16 +176,7 @@
     }
     .empty-icon{font-size:32px;margin-bottom:6px;opacity:.55;}
 
-    /* 上传区 */
-    .drop-area{
-      border:2px dashed var(--border-strong);border-radius:8px;padding:32px;
-      text-align:center;cursor:pointer;background:var(--surface-2);
-      transition:all .2s;
-    }
-    .drop-area:hover,.drop-area.drag{border-color:var(--primary);background:var(--primary-soft);}
-    .drop-icon{font-size:36px;margin-bottom:8px;}
-    .progress{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:10px;}
-    .progress-bar{height:100%;background:var(--primary);width:0;transition:width .25s;}
+    /* 注：原 .drop-area/.drop-icon/.progress/.progress-bar 上传区样式已随上传功能迁移至 /upload 页面，本页不再使用。*/
 
     /* 表单 */
     .field{margin-bottom:12px;}
@@ -349,7 +340,7 @@
     <div class="tab-bar">
       <div class="tab active" data-tab="files" onclick="switchTab('files')">📁 文件浏览</div>
       <div class="tab" data-tab="download" onclick="switchTab('download')">🔐 下载加解密流程</div>
-      <div class="tab" data-tab="upload" onclick="switchTab('upload')">📤 上传文件</div>
+      <div class="tab" data-tab="upload" onclick="location.href='/upload'">📤 上传文件</div>
       <div class="tab" data-tab="level" onclick="switchTab('level')">📈 权限提升</div>
       <div class="tab" data-tab="passwd" onclick="switchTab('passwd')">🔑 修改密码</div>
     </div>
@@ -450,24 +441,21 @@
         <div id="dl-msg" class="msg" style="margin-top:14px;"></div>
       </div>
 
-      <!-- 上传 -->
+      <!-- 上传（跳转加密演示页） -->
       <div class="pane" id="pane-upload">
         <h3 class="panel-title">📤 上传文件</h3>
-        <p class="panel-sub">文件上传后自动 DES-CBC 加密，按权限级别存入对应目录。</p>
-        <div id="up-msg" class="msg"></div>
-        <div class="drop-area" id="drop" onclick="document.getElementById('file-in').click()">
-          <div class="drop-icon">📤</div>
-          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">点击或拖拽文件到此处上传</div>
-          <div style="font-size:12px;color:var(--text-mute);">支持任意类型 · 自动 DES-CBC 加密 · 限制 50MB</div>
-          <input type="file" id="file-in" hidden onchange="doUpload(this.files[0])">
-        </div>
-        <div id="up-status" style="display:none;margin-top:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:14px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <div id="up-name" style="font-size:13px;font-weight:600;">--</div>
-            <div id="up-pct" style="font-size:12px;color:var(--text-mute);">0%</div>
-          </div>
-          <div class="progress"><div class="progress-bar" id="up-bar"></div></div>
-          <div id="up-detail" style="font-size:12px;color:var(--text-mute);margin-top:8px;">就绪</div>
+        <p class="panel-sub">加密上传功能已统一在"加密传输演示页"，支持选择密级（公开/一般/高级/特殊）。</p>
+
+        <div style="max-width:560px;margin:24px auto;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center;">
+          <div style="font-size:48px;margin-bottom:12px;">📤</div>
+          <h4 style="margin:0 0 8px;font-size:18px;font-weight:700;">加密上传请前往演示页</h4>
+          <p style="margin:0 0 18px;color:var(--text-soft);font-size:13px;line-height:1.6;">
+            演示页提供完整的<b>明文 → DES-CBC 加密 → 密文 → 解密还原</b>可视化流程，<br>
+            并支持选择<b>密级</b>（公开/一般/高级/特殊）后上传。
+          </p>
+          <a href="/upload" class="btn btn-primary" style="text-decoration:none;padding:10px 22px;font-size:14px;">
+            🔐 前往加密传输演示页 →
+          </a>
         </div>
       </div>
 
@@ -880,63 +868,8 @@
     }
 
     // ============= 上传 =============
-    var drop = document.getElementById('drop');
-    ['dragenter','dragover'].forEach(function(e){
-      drop.addEventListener(e, function(ev){ev.preventDefault();drop.classList.add('drag');});
-    });
-    ['dragleave','drop'].forEach(function(e){
-      drop.addEventListener(e, function(ev){ev.preventDefault();drop.classList.remove('drag');});
-    });
-    drop.addEventListener('drop', function(ev){
-      if(ev.dataTransfer.files.length > 0) doUpload(ev.dataTransfer.files[0]);
-    });
-    function doUpload(f){
-      if(!f) return;
-      if(f.size > 50*1024*1024){ alert('文件不得超过 50MB'); return; }
-      var upStatus = document.getElementById('up-status');
-      upStatus.style.display = 'block';
-      document.getElementById('up-name').textContent = f.name;
-      document.getElementById('up-pct').textContent = '0%';
-      document.getElementById('up-bar').style.width = '0%';
-      document.getElementById('up-detail').textContent = '上传中…';
-
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST','/api/upload', true);
-      xhr.upload.onprogress = function(e){
-        if(e.lengthComputable){
-          var p = Math.round(e.loaded/e.total*100);
-          document.getElementById('up-pct').textContent = p + '%';
-          document.getElementById('up-bar').style.width = p + '%';
-        }
-      };
-      xhr.onload = function(){
-        try{
-          var d = JSON.parse(xhr.responseText);
-          if(d.success){
-            document.getElementById('up-pct').textContent = '100%';
-            document.getElementById('up-bar').style.width = '100%';
-            document.getElementById('up-detail').innerHTML =
-              '✅ 已加密存为 <span class="mono">'+escapeHtml(d.stored_path||'')+'</span><br>'+
-              '💾 密文 '+formatSize(d.encrypted_size||0)+' · 解密副本 '+formatSize(d.decrypted_size||0);
-            showMsg('up-msg','✅ 上传并加密成功：'+d.filename,'success');
-            refreshFiles();
-          } else {
-            document.getElementById('up-detail').textContent = '❌ ' + (d.msg||'上传失败');
-            showMsg('up-msg','❌ '+(d.msg||'上传失败'),'error');
-          }
-        }catch(e){
-          document.getElementById('up-detail').textContent = '❌ 响应解析失败';
-        }
-      };
-      xhr.onerror = function(){
-        showMsg('up-msg','❌ 网络错误','error');
-        document.getElementById('up-detail').textContent = '❌ 网络错误';
-      };
-      var fd = new FormData();
-      fd.append('file', f);
-      fd.append('username', _cli.username);
-      xhr.send(fd);
-    }
+    // 注：上传功能已迁移至 /upload 加密演示页（pane-upload 现为跳转提示卡）。
+    // 原 doUpload() 拖拽代码已移除。
 
     // ============= 权限提升申请 =============
     function requestLvUp(e){

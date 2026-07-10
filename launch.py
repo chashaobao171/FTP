@@ -54,6 +54,8 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'ftp_project'))
 
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
+import shutil
+import tempfile
 
 # 创建应用
 app = Flask(__name__, static_folder='dist', static_url_path='')
@@ -325,9 +327,13 @@ def api_upload():
 
     username = request.form.get('username', '').strip()
     target_level = request.form.get('level', '公开').strip()
+    # === 密级权限校验 ===
+    if not username:
+        return jsonify({'success': False, 'msg': '请提供用户名'})
+    if not us.user_exists(username):
+        return jsonify({'success': False, 'msg': f'用户 {username} 不存在'})
     if target_level not in LEVEL_MAP:
         target_level = '公开'
-    # 权限校验：只能上传到当前等级及以下目录
     if not can_access(username, target_level):
         return jsonify({'success': False, 'msg': f'权限不足，无法上传到 {target_level} 目录'})
 
@@ -344,7 +350,25 @@ def api_upload():
         final = f'{base}_{i}{ext}.enc'
         i += 1
     main_path = os.path.join(target_dir, final)
-    f.save(main_path)
+    # 演示用：解密副本原始文件名（无 .enc 后缀）
+    final_plain = name
+    i = 1
+    while os.path.exists(os.path.join(target_dir, final_plain)):
+        final_plain = f'{base}_{i}{ext}'
+        i += 1
+
+    # === 真正的加密流程：先存到临时明文 → encrypt_file 加密到 main_path ===
+    # 这样 .enc 文件符合 encrypt_file 格式 [8B total][4B chunk_len][8B IV][密文]*
+    # 否则直接 f.save(main_path) 写明文为 .enc，下载时解密必败。
+    from ftp_project import encrypt as _enc
+    tmp_dir = tempfile.mkdtemp()
+    tmp_plain = os.path.join(tmp_dir, name)
+    try:
+        f.save(tmp_plain)                                  # 1) 保存明文到临时目录
+        _enc.encrypt_file(tmp_plain, main_path)             # 2) 用 DES-CBC 流式加密到主存路径
+    except Exception as e:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return jsonify({'success': False, 'msg': f'加密失败：{e}'})
 
     # === 演示用：.encrypted/ 与 .decrypted/（便于展示页面）===
     enc_dir = os.path.join(FTP_ROOT, '.encrypted')
@@ -363,16 +387,15 @@ def api_upload():
     enc_path = os.path.join(enc_dir, enc_name)
     dec_path = os.path.join(dec_dir, dec_name)
 
-    # 把刚保存的密文（main_path）拷一份到 .encrypted/，并解密到 .decrypted/
+    # 主存已是 .enc，拷到 .encrypted/ 演示用，再解密一份到 .decrypted/
     try:
-        from ftp_project import encrypt as _enc
-        # 主存已经是 .enc 格式，直接拷到演示目录即可
-        import shutil
-        shutil.copyfile(main_path, enc_path)
-        # 解密到 .decrypted/ 用于演示
-        _enc.decrypt_file(enc_path, dec_path)
+        shutil.copyfile(main_path, enc_path)              # 复制密文到演示目录
+        _enc.decrypt_file(enc_path, dec_path)             # 解密到演示副本
     except Exception as e:
-        return jsonify({'success': False, 'msg': f'加解密失败：{e}'})
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return jsonify({'success': False, 'msg': f'演示副本加解密失败：{e}'})
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)        # 清临时明文
 
     return jsonify({
         'success': True,

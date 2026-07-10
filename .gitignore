@@ -48,6 +48,16 @@ ftp_project/ftp_root/.tmp/
 # uploads/login_history.json
 
 # ============================
+# 运行时动态数据（演示/测试产生的加密文件，每次运行都变化）
+# ============================
+ftp_project/ftp_root/.encrypted/
+ftp_project/ftp_root/.decrypted/
+ftp_project/ftp_root/公开/
+ftp_project/ftp_root/一般/
+ftp_project/ftp_root/高级/
+ftp_project/ftp_root/特殊/
+
+# ============================
 # 运行时临时文件
 # ============================
 ftp_project/ftp_root/.tmp/
