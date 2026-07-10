@@ -264,6 +264,54 @@ python test_run.py
 
 ---
 
+## 🔄 实时同步 GitHub 工作流（已配好）
+
+仓库已绑定到 `https://github.com/chashaobao171/FTP` 并配置了凭据缓存。**改完代码后**，在项目根目录跑一个命令即可同步：
+
+### 最常用：`git sync "改了什么"`
+```bash
+git sync "feat: 加了 AES 支持"
+# 等价于：add . → commit → pull --rebase → push
+```
+
+### 三个内置 alias（一次性脚本，已写入 .git/config）
+
+| Alias | 作用 |
+|-------|------|
+| `git sync "描述"` | 自动 add + commit + pull + push，推送到 GitHub |
+| `git pp` | 仅 pull + push（不 commit，适合同步远端别人的改动） |
+| `git st` | 单行状态（已设置简化输出） |
+
+**离线情况下**，手动版 4 步：
+```bash
+git add .
+git commit -m "改了 X"
+git pull --rebase origin main
+git push origin main
+```
+
+### 第一次跨设备克隆
+
+```bash
+git clone https://github.com/chashaobao171/FTP.git
+cd FTP
+pip install -r requirements.txt
+python launch.py
+```
+
+> 协作前需要在 GitHub 设置 Personal Access Token，仓库凭据不通过密码认证。
+
+---
+
+## 🌐 远程仓库信息
+
+- **GitHub**: https://github.com/chashaobao171/FTP
+- **默认分支**: main
+- **首次提交**: `fa59c12` (initial public release)
+- **认证方式**: PAT + Git Credential Manager（推不再弹登录框）
+
+---
+
 ## 🤖 AI 助手协作约定
 
 > 当你（一个 AI Agent）被要求**修改或扩展**这个项目时，请遵循：
