@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 · FTP 安全传输系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --text: #1f2937;
+      --text-soft: #4b5563;
+      --text-mute: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+    }
+    *{font-family:'Inter',system-ui,-apple-system,'Microsoft YaHei',sans-serif;box-sizing:border-box;}
+    code,.mono{font-family:'JetBrains Mono',Consolas,monospace;}
+
+    body{
+      margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-size:14px;
+      display:flex;align-items:center;justify-content:center;padding:24px;
+    }
+
+    .card{
+      width:100%;max-width:440px;background:var(--surface);
+      border:1px solid var(--border);border-radius:8px;padding:32px 28px;
+      box-shadow:0 4px 16px rgba(0,0,0,.05);
+    }
+
+    .brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;}
+    .brand-mark{width:44px;height:44px;border-radius:10px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;}
+    .brand-name{font-size:18px;font-weight:700;color:var(--text);}
+
+    .title{text-align:center;font-size:18px;font-weight:700;margin:8px 0 2px;color:var(--text);}
+    .sub-title{text-align:center;font-size:12px;color:var(--text-mute);margin-bottom:22px;}
+
+    /* 角色切换 */
+    .role-switch{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px;margin-bottom:18px;}
+    .role-opt{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--text-mute);cursor:pointer;border-radius:4px;transition:all .15s;}
+    .role-opt:hover{color:var(--text);}
+    .role-opt.active{background:var(--primary);color:#fff;}
+
+    /* Tab 切换 */
+    .tab-row{display:flex;gap:2px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px;margin-bottom:18px;}
+    .tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--text-mute);cursor:pointer;border-radius:4px;}
+    .tab.active{background:var(--surface);color:var(--primary);border:1px solid var(--border);}
+    .tab:not(.active):hover{color:var(--text);}
+
+    .pane{display:none;}
+    .pane.active{display:block;}
+
+    /* 表单 */
+    .field{margin-bottom:12px;}
+    .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:4px;}
+    .field input{width:100%;padding:9px 11px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;transition:border .15s,box-shadow .15s;}
+    .field input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);}
+    .field input::placeholder{color:var(--text-mute);}
+
+    /* 密码强度 */
+    .pw-strength{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:6px;}
+    .pw-strength-bar{height:100%;width:0;transition:all .25s;border-radius:2px;}
+    .pw-hint{font-size:11px;color:var(--text-mute);margin-top:4px;}
+
+    /* 按钮 */
+    .submit{width:100%;padding:11px;border-radius:6px;border:0;cursor:pointer;font-weight:700;font-size:14px;color:#fff;background:var(--primary);transition:all .15s;margin-top:6px;}
+    .submit:hover{background:var(--primary-hover);}
+    .submit:disabled{opacity:.6;cursor:not-allowed;}
+    .submit.success{background:var(--success);}
+    .submit.success:hover{background:#15803d;}
+
+    /* 提示 */
+    .msg{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px;display:none;}
+    .msg.show{display:block;}
+    .msg-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+    .msg-ok{background:var(--primary-soft);border:1px solid #bfdbfe;color:#1e3a8a;}
+
+    .foot-link{text-align:center;margin-top:18px;font-size:12px;color:var(--text-mute);}
+    .foot-link a{color:var(--primary);text-decoration:none;}
+    .foot-link a:hover{text-decoration:underline;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">🔐</div>
+      <div class="brand-name">FTP 安全传输系统</div>
+    </div>
+    <div class="sub-title">FTP Secure Transfer · 用户登录</div>
+
+    <div class="role-switch">
+      <div class="role-opt active" data-role="admin" onclick="switchRole('admin')">🛡️ 管理员</div>
+      <div class="role-opt" data-role="client" onclick="switchRole('client')">👤 客户端</div>
+    </div>
+
+    <div class="tab-row" id="clientTabs" style="display:none;">
+      <div class="tab active" data-tab="login" onclick="switchTab('login')">登录</div>
+      <div class="tab" data-tab="register" onclick="switchTab('register')">注册</div>
+    </div>
+
+    <!-- 管理员登录 -->
+    <div class="pane active" id="pane-admin">
+      <div id="msg-admin" class="msg"></div>
+      <form onsubmit="return doAdminLogin(event)">
+        <div class="field">
+          <label>管理员账号</label>
+          <input type="text" id="ad-u" placeholder="请输入管理员账号" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label>登录密码（≥ 6 位）</label>
+          <input type="password" id="ad-p" placeholder="请输入登录密码" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label>验证密码</label>
+          <input type="password" id="ad-v" placeholder="二次验证密码（≥ 6 位）" autocomplete="off">
+          <div class="pw-hint">管理员敏感操作需要二次验证</div>
+        </div>
+        <button class="submit" type="submit" id="btn-admin">🛡️ 进入管理控制台</button>
+      </form>
+    </div>
+
+    <!-- 客户端登录 -->
+    <div class="pane" id="pane-login">
+      <div id="msg-login" class="msg"></div>
+      <form onsubmit="return doClientLogin(event)">
+        <div class="field">
+          <label>用户名</label>
+          <input type="text" id="cl-u" placeholder="请输入用户名（≥ 3 位）" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input type="password" id="cl-p" placeholder="请输入密码（≥ 6 位）" autocomplete="current-password" required>
+        </div>
+        <button class="submit success" type="submit" id="btn-client-login">👤 登录客户端</button>
+      </form>
+    </div>
+
+    <!-- 客户端注册 -->
+    <div class="pane" id="pane-register">
+      <div id="msg-register" class="msg"></div>
+      <form onsubmit="return doClientRegister(event)">
+        <div class="field">
+          <label>用户名（≥ 3 位）</label>
+          <input type="text" id="rg-u" placeholder="请设置用户名" required minlength="3">
+        </div>
+        <div class="field">
+          <label>密码（≥ 6 位）</label>
+          <input type="password" id="rg-p" placeholder="请设置密码" required minlength="6" oninput="onPwInput()">
+          <div class="pw-strength"><div class="pw-strength-bar" id="rg-pbar"></div></div>
+          <div class="pw-hint" id="rg-phint">强度：—</div>
+        </div>
+        <div class="field">
+          <label>邮箱</label>
+          <input type="email" id="rg-e" placeholder="example@mail.com" required>
+        </div>
+        <button class="submit success" type="submit" id="btn-register">✍️ 提交注册申请</button>
+        <div class="pw-hint" style="text-align:center;margin-top:8px;">
+          注册后需管理员审核通过方可登录
+        </div>
+      </form>
+    </div>
+
+    <div class="foot-link">
+      <a href="/">← 返回入口</a>　·　<a href="/upload">📤 加密传输演示</a>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var q = new URLSearchParams(location.search).get('role');
+      if(q === 'client') switchRole('client');
+    })();
+
+    function switchRole(r){
+      document.querySelectorAll('.role-opt').forEach(function(e){
+        e.classList.toggle('active', e.dataset.role === r);
+      });
+      document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('active');});
+      var clientTabs = document.getElementById('clientTabs');
+      if(r === 'admin'){
+        document.getElementById('pane-admin').classList.add('active');
+        clientTabs.style.display = 'none';
+      } else {
+        clientTabs.style.display = 'flex';
+        var activeTab = document.querySelector('.tab.active').dataset.tab;
+        document.getElementById('pane-' + activeTab).classList.add('active');
+      }
+    }
+
+    function switchTab(t){
+      document.querySelectorAll('.tab').forEach(function(e){
+        e.classList.toggle('active', e.dataset.tab === t);
+      });
+      document.querySelectorAll('.pane').forEach(function(p){
+        if(p.id.indexOf('pane-') === 0) p.classList.remove('active');
+      });
+      document.getElementById('pane-' + t).classList.add('active');
+    }
+
+    function showMsg(id, html, kind){
+      var box = document.getElementById(id);
+      box.className = 'msg msg-' + (kind==='error'?'err':'ok') + ' show';
+      box.innerHTML = html;
+    }
+    function clearMsg(id){ document.getElementById(id).classList.remove('show'); document.getElementById(id).innerHTML=''; }
+
+    function onPwInput(){
+      var v = document.getElementById('rg-p').value;
+      var bar = document.getElementById('rg-pbar');
+      var hint = document.getElementById('rg-phint');
+      var score = 0;
+      if(v.length >= 6) score++;
+      if(v.length >= 10) score++;
+      if(/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+      if(/[0-9]/.test(v)) score++;
+      if(/[^A-Za-z0-9]/.test(v)) score++;
+      var pct = (score/5)*100;
+      var color = '#dc2626', text = '弱：请加入大小写/数字/符号';
+      if(score >= 4){ color='#16a34a'; text='强：密码强度良好'; }
+      else if(score >= 2){ color='#d97706'; text='中：建议加入更多字符类型'; }
+      bar.style.width = pct + '%';
+      bar.style.background = color;
+      hint.textContent = '强度：' + text;
+      hint.style.color = color;
+    }
+
+    async function doAdminLogin(e){
+      e.preventDefault();
+      var u = document.getElementById('ad-u').value.trim();
+      var p = document.getElementById('ad-p').value;
+      var v = document.getElementById('ad-v').value;
+      clearMsg('msg-admin');
+      var btn = document.getElementById('btn-admin');
+      btn.disabled = true; btn.textContent = '验证中…';
+      try{
+        var r = await fetch('/api/admin/login', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username:u, password:p, admin_verify:v})
+        });
+        var d = await r.json();
+        if(d.success){
+          localStorage.setItem('ftp_admin', JSON.stringify({
+            username:d.username, is_admin:true, level:4,
+            admin_verified:!!d.admin_verified, login_time:Date.now()
+          }));
+          showMsg('msg-admin','✅ 登录成功，正在跳转…','ok');
+          setTimeout(function(){ location.href='/admin'; }, 600);
+        } else {
+          showMsg('msg-admin','❌ '+(d.msg||'登录失败'),'error');
+          btn.disabled=false; btn.textContent='🛡️ 进入管理控制台';
+        }
+      } catch(err){
+        showMsg('msg-admin','❌ 网络错误：'+err.message,'error');
+        btn.disabled=false; btn.textContent='🛡️ 进入管理控制台';
+      }
+      return false;
+    }
+
+    async function doClientLogin(e){
+      e.preventDefault();
+      var u = document.getElementById('cl-u').value.trim();
+      var p = document.getElementById('cl-p').value;
+      clearMsg('msg-login');
+      var btn = document.getElementById('btn-client-login');
+      btn.disabled=true; btn.textContent='登录中…';
+      try{
+        var r = await fetch('/api/client/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username:u, password:p})
+        });
+        var d = await r.json();
+        if(d.success){
+          localStorage.setItem('ftp_client', JSON.stringify({
+            username:d.username, level:d.level, level_name:d.level_name,
+            email:d.email, is_admin:!!d.is_admin, login_time:Date.now()
+          }));
+          showMsg('msg-login','✅ 登录成功，正在跳转…','ok');
+          setTimeout(function(){ location.href=d.is_admin ? '/admin' : '/home'; }, 600);
+        } else {
+          showMsg('msg-login','❌ '+(d.msg||'登录失败：用户名或密码错误'),'error');
+          btn.disabled=false; btn.textContent='👤 登录客户端';
+        }
+      } catch(err){
+        showMsg('msg-login','❌ 网络错误：'+err.message,'error');
+        btn.disabled=false; btn.textContent='👤 登录客户端';
+      }
+      return false;
+    }
+
+    async function doClientRegister(e){
+      e.preventDefault();
+      var u = document.getElementById('rg-u').value.trim();
+      var p = document.getElementById('rg-p').value;
+      var em = document.getElementById('rg-e').value.trim();
+      clearMsg('msg-register');
+      var btn = document.getElementById('btn-register');
+      btn.disabled=true; btn.textContent='提交中…';
+      try{
+        var r = await fetch('/api/client/register', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username:u, password:p, email:em})
+        });
+        var d = await r.json();
+        if(d.success){
+          showMsg('msg-register','✅ '+(d.msg||'注册成功，等待管理员审核'),'ok');
+          document.getElementById('rg-u').value='';
+          document.getElementById('rg-p').value='';
+          document.getElementById('rg-e').value='';
+          document.getElementById('rg-pbar').style.width='0';
+          setTimeout(function(){ switchTab('login'); }, 1500);
+        } else {
+          showMsg('msg-register','❌ '+(d.msg||'注册失败'),'error');
+        }
+      } catch(err){
+        showMsg('msg-register','❌ 网络错误：'+err.message,'error');
+      }
+      btn.disabled=false; btn.textContent='✍️ 提交注册申请';
+      return false;
+    }
+  </script>
+</body>
+</html>

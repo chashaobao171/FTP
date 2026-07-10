@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FTP 安全传输系统 · 入口</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --text: #1f2937;
+      --text-soft: #4b5563;
+      --text-mute: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #16a34a;
+      --success-soft: #f0fdf4;
+      --warning: #d97706;
+      --info: #0891b2;
+      --violet: #7c3aed;
+      --pink: #be185d;
+      --l1: #94a3b8;
+      --l2: #2563eb;
+      --l3: #7c3aed;
+      --l4: #be185d;
+    }
+    *{font-family:'Inter',system-ui,-apple-system,'Microsoft YaHei',sans-serif;box-sizing:border-box;}
+    code,.mono{font-family:'JetBrains Mono',Consolas,monospace;}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-size:14px;}
+    a{color:var(--primary);text-decoration:none;}
+
+    /* 顶部 */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;}
+    .header-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+    .brand{display:flex;align-items:center;gap:10px;}
+    .brand-mark{width:34px;height:34px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;}
+    .brand-title{font-size:15px;font-weight:700;line-height:1.2;}
+    .brand-sub{font-size:12px;color:var(--text-mute);line-height:1.2;}
+
+    .status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--success-soft);color:var(--success);border:1px solid #bbf7d0;font-size:12px;font-weight:600;}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--success);}
+    .header-meta{font-size:11px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;}
+    .header-meta b{color:var(--text);}
+
+    main{max-width:1280px;margin:0 auto;padding:24px;}
+    .layout{display:grid;grid-template-columns:1.6fr 1fr;gap:24px;}
+    @media (max-width: 900px){ .layout{grid-template-columns:1fr;} }
+
+    /* 左侧 */
+    .hero{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+    .hero-mark{width:54px;height:54px;border-radius:12px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+    h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1.2;}
+    .hero-tag{display:inline-block;padding:2px 8px;background:var(--primary-soft);border:1px solid #bfdbfe;color:var(--primary);font-size:11px;font-weight:600;border-radius:4px;margin-bottom:6px;}
+    .hero p{font-size:13px;line-height:1.7;color:var(--text-soft);margin:6px 0 0;}
+
+    .section-title{font-size:14px;font-weight:700;margin:0 0 10px;}
+
+    /* 入口按钮 */
+    .entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    @media (max-width: 600px){ .entry-grid{grid-template-columns:1fr;} }
+    .entry{
+      padding:14px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s;text-decoration:none;
+    }
+    .entry:hover{border-color:var(--primary);box-shadow:0 2px 8px rgba(37,99,235,.08);text-decoration:none;}
+    .entry-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0;}
+    .entry-icon.admin{background:var(--primary);}
+    .entry-icon.client{background:var(--success);}
+    .entry-icon.upload{background:var(--warning);}
+    .entry-icon.docs{background:var(--violet);}
+    .entry-body{flex:1;min-width:0;}
+    .entry-title{font-size:14px;font-weight:700;color:var(--text);}
+    .entry-sub{font-size:11px;color:var(--text-mute);}
+
+    /* 核心特性 */
+    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+    @media (max-width: 600px){ .feat-grid{grid-template-columns:1fr 1fr;} }
+    .feat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;}
+    .feat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:8px;color:#fff;}
+    .feat-icon.b{background:var(--primary);}
+    .feat-icon.v{background:var(--violet);}
+    .feat-icon.g{background:var(--success);}
+    .feat-icon.a{background:var(--warning);}
+    .feat-icon.r{background:#dc2626;}
+    .feat-icon.p{background:var(--pink);}
+    .feat-title{font-size:13px;font-weight:700;margin-bottom:2px;}
+    .feat-sub{font-size:11px;color:var(--text-mute);}
+
+    /* 卡片 */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;}
+    .card-title{font-size:13px;font-weight:700;margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;}
+    .card-title .live{font-size:10px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;}
+
+    /* 状态行 */
+    .state-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface-2);border-radius:6px;margin-bottom:6px;font-size:12px;}
+    .state-row .k{color:var(--text-mute);}
+    .state-row .v{font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+    /* 4 级目录 */
+    .level-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;}
+    .level-card{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center;}
+    .level-card .ln{font-size:12px;font-weight:700;}
+    .level-card .lp{font-size:10px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;}
+    .level-card .lt{display:inline-block;padding:1px 6px;font-size:9px;font-weight:700;color:#fff;border-radius:3px;margin-top:4px;}
+
+    .safe-list{list-style:none;padding:0;margin:0;}
+    .safe-list li{display:flex;gap:8px;font-size:12px;color:var(--text-soft);margin-bottom:5px;}
+    .safe-list li::before{content:'✓';color:var(--success);font-weight:700;}
+
+    .chip{display:inline-block;padding:2px 8px;font-size:11px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text-soft);margin:2px;}
+
+    footer{text-align:center;padding:20px;font-size:11px;color:var(--text-mute);border-top:1px solid var(--border);margin-top:30px;background:var(--surface);}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <a href="/" class="brand-mark">🔐</a>
+        <div>
+          <div class="brand-title">FTP 安全传输系统</div>
+          <div class="brand-sub">FTP Secure Transfer · 网络安全综合实践</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="status-pill" id="status-pill"><span class="dot"></span><span id="status-text">检查中…</span></div>
+        <div class="header-meta">
+          Web <b>5000</b> · CMD <b>8888</b> · DATA <b>8000</b> · UDP <b>9999</b>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="layout">
+      <div>
+        <div class="hero">
+          <div class="hero-mark">🔐</div>
+          <div>
+            <span class="hero-tag">✨ 网络安全综合实践</span>
+            <h1>FTP 安全传输系统</h1>
+          </div>
+        </div>
+        <p>
+          基于 <b>BLP 四级访问控制</b> + <b>DES-CBC 文件加密</b> + <b>双通道 Socket 通信</b> 的端到端安全文件传输方案。
+          支持注册审批、断点续传、UDP 服务发现、密钥解密的真实业务流程。
+        </p>
+
+        <h3 class="section-title" style="margin-top:24px;">⚡ 快捷入口</h3>
+        <div class="entry-grid">
+          <a href="/login" class="entry">
+            <div class="entry-icon admin">🛡️</div>
+            <div class="entry-body">
+              <div class="entry-title">管理员登录</div>
+              <div class="entry-sub">服务端 · 用户/文件管理</div>
+            </div>
+          </a>
+          <a href="/login?role=client" class="entry">
+            <div class="entry-icon client">👤</div>
+            <div class="entry-body">
+              <div class="entry-title">客户端登录</div>
+              <div class="entry-sub">注册 / 上传 / 下载文件</div>
+            </div>
+          </a>
+          <a href="/upload" class="entry">
+            <div class="entry-icon upload">📤</div>
+            <div class="entry-body">
+              <div class="entry-title">加密传输演示</div>
+              <div class="entry-sub">明文 → 密文 → 解密全流程</div>
+            </div>
+          </a>
+          <a href="/home" class="entry" id="entry-client">
+            <div class="entry-icon client">📁</div>
+            <div class="entry-body">
+              <div class="entry-title">客户端工作台</div>
+              <div class="entry-sub">需先登录</div>
+            </div>
+          </a>
+        </div>
+
+        <h3 class="section-title" style="margin-top:24px;">✨ 核心特性</h3>
+        <div class="feat-grid">
+          <div class="feat">
+            <div class="feat-icon b">🔒</div>
+            <div class="feat-title">DES-CBC 加密</div>
+            <div class="feat-sub">PKCS#7 填充 · MD5 派生 IV</div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon v">🛡️</div>
+            <div class="feat-title">BLP 四级权限</div>
+            <div class="feat-sub">公开/一般/高级/特殊</div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon g">🔁</div>
+            <div class="feat-title">断点续传</div>
+            <div class="feat-sub">offset 机制 · 可恢复</div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon a">📡</div>
+            <div class="feat-title">UDP 广播</div>
+            <div class="feat-sub">自动发现服务端</div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon r">👮</div>
+            <div class="feat-title">管理员审核</div>
+            <div class="feat-sub">注册审批 + 权限提升</div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon p">⚡</div>
+            <div class="feat-title">双通道通信</div>
+            <div class="feat-sub">控制 8888 + 数据 8000</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">📊 实时状态 <span class="live">LIVE</span></div>
+
+          <div class="state-row"><span class="k">Web 控制面板</span><span class="v">5000</span></div>
+          <div class="state-row"><span class="k">指令通道</span><span class="v">8888 (TCP)</span></div>
+          <div class="state-row"><span class="k">数据通道</span><span class="v">8000 (TCP)</span></div>
+          <div class="state-row"><span class="k">广播</span><span class="v">9999 (UDP)</span></div>
+
+          <div style="border-top:1px solid var(--border);margin:14px 0;padding-top:12px;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:8px;">📁 四级文件目录</div>
+            <div class="level-row">
+              <div class="level-card">
+                <div class="ln">公开</div>
+                <div class="lp">ftp_root/公开</div>
+                <div class="lt" style="background:var(--l1);">L1</div>
+              </div>
+              <div class="level-card">
+                <div class="ln">一般</div>
+                <div class="lp">ftp_root/一般</div>
+                <div class="lt" style="background:var(--l2);">L2</div>
+              </div>
+              <div class="level-card">
+                <div class="ln">高级</div>
+                <div class="lp">ftp_root/高级</div>
+                <div class="lt" style="background:var(--l3);">L3</div>
+              </div>
+              <div class="level-card">
+                <div class="ln">特殊</div>
+                <div class="lp">ftp_root/特殊</div>
+                <div class="lt" style="background:var(--l4);">L4</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-mute);">BLP 模型下读：高等级可访问低等级目录</div>
+          </div>
+
+          <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:8px;">🔐 安全机制</div>
+            <ul class="safe-list">
+              <li>SHA-256 密码哈希存储</li>
+              <li>管理员两阶段登录验证</li>
+              <li>注册申请需管理员审核</li>
+              <li>权限修改实时同步客户端</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🧰 技术栈</div>
+          <div>
+            <span class="chip">Python 3</span>
+            <span class="chip">Flask</span>
+            <span class="chip">Socket</span>
+            <span class="chip">pycryptodome</span>
+            <span class="chip">DES-CBC</span>
+            <span class="chip">SHA-256</span>
+            <span class="chip">IV 派生</span>
+            <span class="chip">BLP 模型</span>
+          </div>
+          <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:10px;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px;">📄 项目资料</div>
+            <a href="/api/encrypt/info" target="_blank" class="state-row" style="text-decoration:none;color:var(--text-soft);">
+              <span>→ 加密算法 JSON</span><span class="v">api/encrypt/info</span>
+            </a>
+            <a href="/api/status" target="_blank" class="state-row" style="text-decoration:none;color:var(--text-soft);">
+              <span>→ 服务运行状态</span><span class="v">api/status</span>
+            </a>
+            <a href="/upload" class="state-row" style="text-decoration:none;color:var(--text-soft);">
+              <span>→ 加密传输演示页</span><span class="v">/upload</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      © 2026 网络安全综合实践 · 基于 FTP 协议的安全文件传输系统
+    </footer>
+  </main>
+
+  <script>
+    // 心跳：自动刷新服务状态
+    fetch('/api/status').then(r=>r.json()).then(function(d){
+      var pill = document.getElementById('status-pill');
+      var txt = document.getElementById('status-text');
+      var dot = pill.querySelector('.dot');
+      if(d.running){
+        pill.style.background = '#f0fdf4';
+        pill.style.color = '#16a34a';
+        pill.style.borderColor = '#bbf7d0';
+        dot.style.background = '#16a34a';
+        txt.textContent = '服务运行中';
+      } else {
+        pill.style.background = '#fef2f2';
+        pill.style.color = '#dc2626';
+        pill.style.borderColor = '#fecaca';
+        dot.style.background = '#dc2626';
+        txt.textContent = '服务未启动';
+      }
+    }).catch(function(){
+      document.getElementById('status-text').textContent = '连接失败';
+    });
+
+    // 已登录提示
+    var _cli = JSON.parse(localStorage.getItem('ftp_client') || 'null');
+    if(_cli){
+      var e = document.getElementById('entry-client');
+      e.querySelector('.entry-title').textContent = '进入客户端 (' + _cli.username + ')';
+      e.querySelector('.entry-sub').textContent = '当前等级：' + (_cli.level_name || ('Lv'+_cli.level));
+    }
+  </script>
+</body>
+</html>

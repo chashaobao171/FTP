@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>加密传输演示 · FTP 安全传输系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --text: #1f2937;
+      --text-soft: #4b5563;
+      --text-mute: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #16a34a;
+      --success-soft: #f0fdf4;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --amber: #d97706;
+      --amber-soft: #fffbeb;
+    }
+    *{font-family:'Inter',system-ui,-apple-system,'Microsoft YaHei',sans-serif;box-sizing:border-box;}
+    code,pre,.mono{font-family:'JetBrains Mono',Consolas,monospace;}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-size:14px;}
+
+    /* 顶部 */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;}
+    .header-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+    .brand{display:flex;align-items:center;gap:10px;}
+    .brand-mark{width:34px;height:34px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;}
+    .brand-title{font-size:15px;font-weight:700;line-height:1.2;}
+    .brand-sub{font-size:12px;color:var(--text-mute);line-height:1.2;}
+    .back-link{padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--text-soft);font-size:13px;font-weight:600;text-decoration:none;}
+    .back-link:hover{background:var(--surface-2);text-decoration:none;}
+
+    main{max-width:1280px;margin:0 auto;padding:24px;}
+    h2{margin:0 0 8px;font-size:22px;font-weight:800;}
+    .lead{color:var(--text-soft);font-size:13px;margin:0 0 18px;}
+
+    /* 按钮 */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;border:1px solid transparent;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+    .btn-primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);}
+    .btn-success{background:var(--success);color:#fff;border-color:var(--success);}
+    .btn-success:hover{background:#15803d;}
+    .btn-warn{background:var(--amber);color:#fff;border-color:var(--amber);}
+    .btn-warn:hover{background:#b45309;}
+    .btn-violet{background:#7c3aed;color:#fff;border-color:#7c3aed;}
+    .btn-violet:hover{background:#6d28d9;}
+    .btn-ghost{background:var(--surface);color:var(--text-soft);border:1px solid var(--border);}
+    .btn-ghost:hover{background:var(--surface-2);}
+    .btn-sm{padding:4px 10px;font-size:12px;}
+
+    /* 卡片 */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+    .card-hd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+    .card-hd.plain{background:var(--success-soft);border-bottom:1px solid #bbf7d0;}
+    .card-hd.cipher{background:var(--danger-soft);border-bottom:1px solid #fecaca;}
+    .card-hd.decrypt{background:var(--primary-soft);border-bottom:1px solid #bfdbfe;}
+    .card-hd.amber{background:var(--amber-soft);border-bottom:1px solid #fde68a;}
+    .card-hd.sky{background:#f0f9ff;border-bottom:1px solid #bae6fd;}
+    .card-title{font-size:14px;font-weight:700;}
+    .card-sub{font-size:11px;color:var(--text-mute);}
+    .card-meta{font-size:11px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;}
+
+    pre{
+      margin:0;padding:14px;font-size:11.5px;line-height:1.55;
+      background:var(--surface-2);font-family:'JetBrains Mono',monospace;
+      white-space:pre-wrap;word-break:break-all;color:var(--text);
+    }
+    pre.plain{color:#166534;}
+    pre.cipher{color:#991b1b;}
+    pre.decrypt{color:#1e3a8a;}
+
+    .card-body{padding:14px;}
+
+    /* 3 列对比 */
+    .three-col{
+      display:grid;grid-template-columns:1fr 50px 1fr 50px 1fr;gap:10px;
+      align-items:stretch;margin-bottom:20px;
+    }
+    @media (max-width: 900px){
+      .three-col{grid-template-columns:1fr;}
+      .arrow{display:none;}
+    }
+    .col{min-height:340px;}
+    .arrow{
+      display:flex;align-items:center;justify-content:center;
+      color:var(--text-mute);font-size:22px;
+    }
+    .arrow-inner{
+      width:38px;height:38px;border-radius:50%;
+      background:var(--surface);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;color:var(--primary);
+    }
+
+    .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:18px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;}
+    .toolbar .label{font-size:12px;color:var(--text-mute);font-weight:600;margin-right:6px;}
+    .toolbar .status{font-size:12px;color:var(--text-mute);margin-left:auto;}
+
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    @media (max-width: 900px){ .two-col{grid-template-columns:1fr;} }
+
+    .file-item{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;
+    }
+    .file-item:hover{border-color:var(--primary-soft);}
+    .file-name{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+    .file-meta{font-size:11px;color:var(--text-mute);}
+
+    .upload-area{
+      border:2px dashed var(--border-strong);border-radius:8px;padding:32px;
+      text-align:center;cursor:pointer;background:var(--surface-2);transition:all .2s;
+    }
+    .upload-area:hover{border-color:var(--primary);background:var(--primary-soft);}
+    .upload-icon{font-size:30px;margin-bottom:8px;}
+
+    input[type="text"],input[type="file"]{
+      padding:8px 11px;border:1px solid var(--border-strong);border-radius:6px;
+      background:var(--surface);color:var(--text);font-size:13px;width:100%;
+    }
+    input[type="file"]{padding:6px;}
+
+    .field{margin-bottom:10px;}
+    .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:4px;}
+
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    @media (max-width: 600px){ .compare-grid{grid-template-columns:1fr;} }
+    .compare-card{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+    .compare-card h4{font-size:13px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:6px;}
+    .compare-card ul{list-style:none;padding:0;margin:0;font-size:12px;line-height:1.7;color:var(--text-soft);}
+    .compare-card ul li::before{content:'•';color:var(--primary);font-weight:700;margin-right:6px;}
+    .compare-card ul li b{color:var(--text);}
+
+    .msg{padding:10px 14px;border-radius:6px;margin-top:12px;font-size:13px;}
+    .msg-err{background:var(--danger-soft);border:1px solid #fecaca;color:#991b1b;}
+    .msg-ok{background:var(--success-soft);border:1px solid #bbf7d0;color:#166534;}
+
+    footer{text-align:center;padding:20px;font-size:11px;color:var(--text-mute);}
+
+    /* 空状态 */
+    .empty{padding:30px 20px;text-align:center;color:var(--text-mute);}
+    .empty-icon{font-size:30px;margin-bottom:6px;opacity:.5;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <a href="/" class="brand-mark">🔐</a>
+        <div>
+          <div class="brand-title">FTP 安全传输系统</div>
+          <div class="brand-sub">加密传输演示 · 端口 8888 / 8000 / 9999</div>
+        </div>
+      </div>
+      <a href="/" class="back-link">← 返回主入口</a>
+    </div>
+  </header>
+
+  <main>
+    <h2>🔐 加密传输演示</h2>
+    <p class="lead">看清数据从 <b style="color:var(--success);">明文</b> 到 <b style="color:var(--danger);">密文</b> 再到 <b style="color:var(--primary);">解密还原</b> 的全过程。</p>
+
+    <!-- 3 栏对比 -->
+    <div class="three-col">
+      <div class="card col">
+        <div class="card-hd plain">
+          <div>
+            <div class="card-title">① 原始文件</div>
+            <div class="card-sub">明文 · Plaintext</div>
+          </div>
+          <div class="card-meta" id="plain-size">— B</div>
+        </div>
+        <pre class="plain" id="plain-text">点击下方「加载示例文件」…</pre>
+      </div>
+
+      <div class="arrow"><div class="arrow-inner">→</div></div>
+
+      <div class="card col">
+        <div class="card-hd cipher">
+          <div>
+            <div class="card-title">② 传输中（密文）</div>
+            <div class="card-sub">Ciphertext · DES-CBC</div>
+          </div>
+          <div class="card-meta" id="cipher-size">— B</div>
+        </div>
+        <pre class="cipher" id="cipher-text">点击下方「重新加密」…</pre>
+      </div>
+
+      <div class="arrow"><div class="arrow-inner">→</div></div>
+
+      <div class="card col">
+        <div class="card-hd decrypt">
+          <div>
+            <div class="card-title">③ 服务端解密后</div>
+            <div class="card-sub">Decrypted · 还原明文</div>
+          </div>
+          <div class="card-meta" id="decrypt-size">— B</div>
+        </div>
+        <pre class="decrypt" id="decrypt-text">自动解密…</pre>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <span class="label">操作：</span>
+      <button class="btn btn-success" id="btn-demo-load">📂 加载示例文件</button>
+      <button class="btn btn-warn" id="btn-demo-encrypt">🔒 重新加密</button>
+      <button class="btn btn-violet" id="btn-demo-decrypt">🔓 重新解密</button>
+      <button class="btn btn-primary" id="btn-demo-flow">▶ 一键演示全过程</button>
+      <span class="status" id="status-text">就绪</span>
+    </div>
+
+    <!-- 加解密文件夹 -->
+    <h2 style="margin-top:30px;">📂 加解密文件夹</h2>
+    <p class="lead">服务器真实的存储目录：加密版本落入 <span class="mono">.encrypted/</span>，解密副本落入 <span class="mono">.decrypted/</span>。</p>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-hd amber">
+          <div>
+            <div class="card-title">🔐 加密文件夹</div>
+            <div class="card-sub">/ftp_root/.encrypted/</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadDir('encrypted')">🔄 刷新</button>
+        </div>
+        <div class="card-body" id="dir-encrypted" style="max-height:340px;overflow:auto;">
+          <p style="color:var(--text-mute);font-size:13px;">（加载中…）</p>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-mute);display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;">
+          <span>[8B 总长][4B 块长][8B IV][密文]</span>
+          <span id="encrypted-count">0 文件</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd sky">
+          <div>
+            <div class="card-title">📂 解密文件夹</div>
+            <div class="card-sub">/ftp_root/.decrypted/</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadDir('decrypted')">🔄 刷新</button>
+        </div>
+        <div class="card-body" id="dir-decrypted" style="max-height:340px;overflow:auto;">
+          <p style="color:var(--text-mute);font-size:13px;">（加载中…）</p>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-mute);display:flex;justify-content:space-between;">
+          <span>✅ 服务端密钥自动还原，业务可用</span>
+          <span id="decrypted-count" style="font-family:'JetBrains Mono',monospace;">0 文件</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 算法说明 -->
+    <h2 style="margin-top:30px;">📋 算法说明</h2>
+    <p class="lead">本项目实现 vs 生产环境升级方向</p>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4><span style="color:var(--success);">✅</span> 本项目实现</h4>
+        <ul>
+          <li>算法：<b>DES-CBC</b>（对称加密，分组密码）</li>
+          <li>密钥：8 字节 <span class="mono">b'FTP2025!'</span></li>
+          <li>IV：8 字节，由 <span class="mono">md5(KEY)</span> 派生</li>
+          <li>填充：<b>PKCS#7</b>（块大小 = 8 字节）</li>
+          <li>密码哈希：<b>SHA-256</b>（单向不可逆）</li>
+          <li>权限模型：<b>BLP 四级</b>（公开/一般/高级/特殊）</li>
+        </ul>
+      </div>
+      <div class="compare-card">
+        <h4><span style="color:var(--primary);">🚀</span> 生产环境升级方向</h4>
+        <ul>
+          <li>DES → <b>AES-256-GCM</b>（更强加密 + 认证）</li>
+          <li>静态密钥 → <b>RSA / Diffie-Hellman</b> 密钥交换</li>
+          <li>SHA-256 → <b>bcrypt / Argon2</b>（抗暴力破解）</li>
+          <li>HTTP → <b>TLS 1.3</b> 整链路加密</li>
+          <li>FTP → <b>SFTP / FTPS</b>（标准协议）</li>
+          <li>本地 JSON → <b>数据库 + RBAC</b>（生产级权限）</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 上传测试 -->
+    <h2 style="margin-top:30px;">📤 上传测试文件</h2>
+    <p class="lead">上传的文件会自动加密存到 <span class="mono">.encrypted/</span>，同时解密副本存到 <span class="mono">.decrypted/</span>。</p>
+
+    <div class="card">
+      <div class="card-body">
+        <form id="form">
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;">
+            <div class="field">
+              <label>上传者用户名</label>
+              <input type="text" id="username" placeholder="如：alice" required>
+            </div>
+            <div class="field">
+              <label>选择文件（可多选）</label>
+              <input type="file" id="file" multiple required>
+            </div>
+          </div>
+          <button id="btn" type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+            🚀 上传到服务器（自动加密 + 解密）
+          </button>
+        </form>
+        <div id="msg"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    FTP 安全传输系统 · 基于自实现 socket + DES-CBC 加密 + 四级权限控制
+  </footer>
+
+  <script>
+    let currentCipherB64 = null;
+
+    function setStatus(t){ document.getElementById('status-text').textContent = t; }
+
+    function bytesToHex(arr){
+      let hex = '';
+      for(let i=0;i<arr.length;i++){
+        hex += arr[i].toString(16).padStart(2,'0').toUpperCase();
+        if((i+1) % 32 === 0) hex += '\n';
+        else if((i+1) % 4 === 0) hex += ' ';
+      }
+      return hex;
+    }
+
+    async function loadPlain(){
+      setStatus('加载明文中…');
+      try{
+        const r = await fetch('/api/demo/plain');
+        const j = await r.json();
+        if(j.error) throw new Error(j.error);
+        document.getElementById('plain-text').textContent = j.text;
+        document.getElementById('plain-size').textContent = j.size + ' B';
+        setStatus('明文就绪');
+      } catch(e){
+        setStatus('⚠️ 示例文件未找到');
+        document.getElementById('plain-text').textContent = '请使用下方"上传测试文件"上传任意文本文件以观察加解密流程。';
+      }
+    }
+
+    async function doEncrypt(){
+      setStatus('加密中（DES-CBC）…');
+      const r = await fetch('/api/demo/encrypt',{method:'POST'});
+      const j = await r.json();
+      if(j.error) throw new Error(j.error);
+      currentCipherB64 = j.cipher;
+      const bin = Uint8Array.from(atob(j.cipher), c => c.charCodeAt(0));
+      document.getElementById('cipher-text').textContent =
+        '[IV(8B) + 密文（PKCS#7 填充）]\n\n' + bytesToHex(bin);
+      document.getElementById('cipher-size').textContent = bin.length + ' B';
+      setStatus('加密完成');
+      await doDecrypt();
+    }
+
+    async function doDecrypt(){
+      if(!currentCipherB64){
+        document.getElementById('decrypt-text').textContent = '⚠️ 请先点击"重新加密"';
+        return;
+      }
+      setStatus('解密中…');
+      const r = await fetch('/api/demo/decrypt', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({cipher: currentCipherB64})
+      });
+      const j = await r.json();
+      if(j.error) throw new Error(j.error);
+      document.getElementById('decrypt-text').textContent = j.text;
+      document.getElementById('decrypt-size').textContent = j.size + ' B';
+      setStatus('✓ 演示就绪（明文 → 密文 → 解密一致）');
+    }
+
+    async function runFullDemo(){
+      try{
+        await loadPlain();
+        await new Promise(r => setTimeout(r, 400));
+        await doEncrypt();
+      } catch(e){
+        setStatus('⚠️ ' + e.message);
+      }
+    }
+
+    document.getElementById('btn-demo-load').onclick = loadPlain;
+    document.getElementById('btn-demo-encrypt').onclick = doEncrypt;
+    document.getElementById('btn-demo-decrypt').onclick = doDecrypt;
+    document.getElementById('btn-demo-flow').onclick = runFullDemo;
+
+    // 文件夹浏览
+    async function loadDir(kind){
+      const container = document.getElementById('dir-' + kind);
+      const counter = document.getElementById(kind + '-count');
+      container.innerHTML = '<p style="color:var(--text-mute);font-size:13px;">加载中…</p>';
+      try{
+        const r = await fetch('/api/demo/folder/' + kind);
+        const j = await r.json();
+        const files = j.files || [];
+        counter.textContent = files.length + ' 文件';
+        if(!files.length){
+          container.innerHTML = '<div class="empty"><div class="empty-icon">📂</div>（空文件夹）<br><span style="font-size:12px;">请上传文件后自动出现</span></div>';
+          return;
+        }
+        container.innerHTML = files.map(f => `
+          <div class="file-item">
+            <div>
+              <div class="file-name">${f.name}</div>
+              <div class="file-meta">${(f.size/1024).toFixed(2)} KB · ${new Date(f.mtime*1000).toLocaleString('zh-CN')}</div>
+            </div>
+            ${kind === 'encrypted'
+              ? '<span class="card-meta">bin</span>'
+              : `<button class="btn btn-ghost btn-sm" onclick="previewDecrypted('${f.name.replace(/'/g,"\\'")}')">查看</button>`
+            }
+          </div>
+        `).join('');
+      } catch(e){
+        container.innerHTML = '<p style="color:var(--danger);font-size:13px;">加载失败：' + e.message + '</p>';
+      }
+    }
+
+    async function previewDecrypted(name){
+      const r = await fetch('/api/demo/preview?name=' + encodeURIComponent(name));
+      const j = await r.json();
+      if(j.error){ alert(j.error); return; }
+      const w = window.open('', '_blank');
+      w.document.write('<pre style="font-family:monospace;padding:24px;background:#f3f4f6;color:#1f2937;white-space:pre-wrap">' + (j.text||'').replace(/</g,'&lt;') + '</pre>');
+    }
+
+    // 上传表单
+    document.getElementById('form').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn');
+      const msg = document.getElementById('msg');
+      const files = document.getElementById('file').files;
+      const username = document.getElementById('username').value.trim();
+      if(!files.length || !username) return;
+      btn.disabled = true; btn.textContent = '上传中…';
+      msg.innerHTML = '';
+      let ok = 0, fail = 0;
+      let firstFileText = null;
+      let firstFileName = null;
+      for (const f of files) {
+        if(firstFileText === null){
+          try{
+            firstFileText = await f.text();
+            firstFileName = f.name;
+          } catch(_){}
+        }
+        const fd = new FormData();
+        fd.append('file', f);
+        fd.append('username', username);
+        try{
+          const r = await fetch('/api/upload',{method:'POST',body:fd});
+          const j = await r.json();
+          if(j.success) ok++; else fail++;
+        } catch(err){ fail++; }
+      }
+      msg.className = 'msg ' + (fail ? 'msg-err' : 'msg-ok');
+      msg.textContent = '完成：成功 ' + ok + '，失败 ' + fail;
+      document.getElementById('file').value = '';
+      btn.disabled = false; btn.textContent = '🚀 上传到服务器（自动加密 + 解密）';
+      loadDir('encrypted'); loadDir('decrypted');
+
+      if(firstFileText !== null){
+        await demoUploadFlow(firstFileName, firstFileText);
+      }
+    };
+
+    async function demoUploadFlow(name, text){
+      try{
+        const plainPre = document.getElementById('plain-text');
+        const plainSize = document.getElementById('plain-size');
+        plainPre.textContent = '[已上传] ' + name + '\n\n' + text;
+        const plainBytes = new TextEncoder().encode(text);
+        plainSize.textContent = plainBytes.length + ' B';
+
+        const encRes = await fetch('/api/demo/upload-encrypt', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({text, name})
+        });
+        const encJ = await encRes.json();
+        if(encJ.cipher){
+          currentCipherB64 = encJ.cipher;
+          const bin = Uint8Array.from(atob(encJ.cipher), c => c.charCodeAt(0));
+          document.getElementById('cipher-text').textContent =
+            '[已上传] ' + name + '\nIV(8B) + 密文\n\n' + bytesToHex(bin);
+          document.getElementById('cipher-size').textContent = bin.length + ' B';
+        }
+
+        const decRes = await fetch('/api/demo/upload-decrypt', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({cipher: currentCipherB64})
+        });
+        const decJ = await decRes.json();
+        if(decJ.text !== undefined){
+          document.getElementById('decrypt-text').textContent =
+            '[已还原] ' + name + '\n\n' + decJ.text;
+          document.getElementById('decrypt-size').textContent = decJ.size + ' B';
+          setStatus('✓ 上传 ' + name + ' 演示完成（明文 → 密文 → 解密一致）');
+        }
+      } catch(e){
+        console.error('[demo upload flow]', e);
+        setStatus('⚠️ 演示回填失败：' + e.message);
+      }
+    }
+
+    // 初始化
+    loadPlain();
+    loadDir('encrypted');
+    loadDir('decrypted');
+  </script>
+</body>
+</html>

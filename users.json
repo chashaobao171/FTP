@@ -1,0 +1,50 @@
+{
+  "client1": {
+    "username": "client1",
+    "password": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
+    "email": "596348079@qq.com",
+    "level": 3,
+    "status": "deleted",
+    "apply_time": "2026-06-15 20:34:19",
+    "cipher_pw": "Yi0hOe73lNOhVGSyN8y2BQ==",
+    "level_up_request": {
+      "target_level": 3,
+      "reason": "",
+      "request_time": "2026-06-15 20:38:51",
+      "status": "approved"
+    }
+  },
+  "client2": {
+    "username": "client2",
+    "password": "fbfb386efea67e816f2dda0a8c94a98eb203757aebb3f55f183755a192d44467",
+    "email": "596348079@qq.com",
+    "level": 3,
+    "status": "approved",
+    "apply_time": "2026-07-03 11:34:57",
+    "cipher_pw": "Yi0hOe73lNOhVGSyN8y2BQ=="
+  },
+  "client3": {
+    "username": "client3",
+    "password": "ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae",
+    "email": "test@test.com",
+    "level": 1,
+    "status": "deleted",
+    "apply_time": "2026-07-03 11:45:24",
+    "cipher_pw": "Yi0hOe73lNOKQaXsEDQ2xw=="
+  },
+  "client99": {
+    "username": "client99",
+    "password": "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090",
+    "email": "c99@x.com",
+    "level": 2,
+    "status": "deleted",
+    "apply_time": "2026-07-06 07:57:15",
+    "cipher_pw": "Yi0hOe73lNO8KKich1IrYQ==",
+    "level_up_request": {
+      "target_level": 3,
+      "reason": "????",
+      "request_time": "2026-07-06 07:57:15",
+      "status": "pending"
+    }
+  }
+}

@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理控制台 · FTP 安全传输系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --text: #1f2937;
+      --text-soft: #4b5563;
+      --text-mute: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #16a34a;
+      --success-soft: #f0fdf4;
+      --warning: #d97706;
+      --warning-soft: #fffbeb;
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --info: #0891b2;
+      --l1: #94a3b8;
+      --l2: #2563eb;
+      --l3: #7c3aed;
+      --l4: #be185d;
+    }
+    *{font-family:'Inter',system-ui,-apple-system,'Microsoft YaHei',sans-serif;box-sizing:border-box;}
+    code,.mono{font-family:'JetBrains Mono',Consolas,monospace;}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-size:14px;}
+    a{color:var(--primary);text-decoration:none;}
+
+    /* 顶部 */
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;position:sticky;top:0;z-index:50;}
+    .topbar-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    .brand{display:flex;align-items:center;gap:10px;}
+    .brand-mark{width:34px;height:34px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;}
+    .brand-title{font-size:15px;font-weight:700;line-height:1.2;}
+    .brand-sub{font-size:12px;color:var(--text-mute);line-height:1.2;}
+    .status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--success-soft);color:var(--success);border:1px solid #bbf7d0;font-size:12px;font-weight:600;}
+    .status-pill.stopped{background:var(--danger-soft);color:var(--danger);border-color:#fecaca;}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--success);}
+    .status-pill.stopped .dot{background:var(--danger);}
+
+    /* 按钮 */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;border:1px solid transparent;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--surface);color:var(--text);}
+    .btn:hover{background:var(--surface-2);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;}
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+    .btn-primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);}
+    .btn-success{background:var(--success);color:#fff;border-color:var(--success);}
+    .btn-success:hover{background:#15803d;}
+    .btn-danger{color:var(--danger);border-color:var(--border);}
+    .btn-danger:hover{background:var(--danger-soft);border-color:var(--danger);}
+    .btn-ghost{border-color:var(--border);color:var(--text-soft);}
+    .btn-ghost:hover{background:var(--surface-2);}
+    .btn-sm{padding:4px 10px;font-size:12px;}
+
+    main{max-width:1280px;margin:0 auto;padding:20px 24px 40px;}
+
+    /* 状态卡 */
+    .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+    .stat-label{font-size:12px;color:var(--text-mute);margin-bottom:4px;}
+    .stat-value{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+    .stat-extra{font-size:11px;color:var(--text-mute);margin-top:4px;}
+
+    /* Tab */
+    .tab-bar{display:flex;gap:2px;border-bottom:1px solid var(--border);background:var(--surface);padding:0 12px;border-radius:8px 8px 0 0;overflow-x:auto;}
+    .tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--text-mute);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+    .tab:hover{color:var(--text);}
+    .tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+    .tab-badge{display:inline-block;padding:1px 6px;font-size:10px;font-weight:700;background:var(--danger);color:#fff;border-radius:999px;}
+
+    .panel{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:20px;}
+    .pane{display:none;}
+    .pane.active{display:block;}
+    .panel-title{font-size:15px;font-weight:700;margin:0 0 4px;}
+    .panel-sub{font-size:12px;color:var(--text-mute);margin:0 0 14px;}
+
+    /* 表格 */
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    thead th{padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mute);background:var(--surface-2);border-bottom:1px solid var(--border);font-size:12px;}
+    tbody td{padding:10px 12px;border-bottom:1px solid var(--border);}
+    tbody tr:hover{background:var(--surface-2);}
+    tbody tr:last-child td{border-bottom:none;}
+    .badge{display:inline-block;padding:2px 8px;font-size:11px;font-weight:600;border-radius:4px;}
+    .b-approved{background:var(--success-soft);color:var(--success);border:1px solid #bbf7d0;}
+    .b-pending{background:var(--warning-soft);color:var(--warning);border:1px solid #fde68a;}
+    .b-rejected{background:var(--danger-soft);color:var(--danger);border:1px solid #fecaca;}
+    .b-l1{background:#e5e7eb;color:#475569;}
+    .b-l2{background:#dbeafe;color:#1e40af;}
+    .b-l3{background:#ede9fe;color:#5b21b6;}
+    .b-l4{background:#fce7f3;color:#9d174d;}
+
+    /* 4 级目录 */
+    .level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+    .level-card{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
+    .level-head{display:flex;align-items:center;justify-content:space-between;}
+    .level-name{font-size:14px;font-weight:700;}
+    .level-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;color:#fff;}
+    .level-path{font-size:11px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;}
+    .level-count{font-size:18px;font-weight:700;}
+    .level-state{font-size:12px;color:var(--text-mute);}
+
+    /* 表单 */
+    .field{margin-bottom:12px;}
+    .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:4px;}
+    .field input,.field select{width:100%;padding:8px 11px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;transition:border .15s,box-shadow .15s;}
+    .field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);}
+
+    .msg{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px;display:none;}
+    .msg.show{display:block;}
+    .msg-err{background:var(--danger-soft);border:1px solid #fecaca;color:#991b1b;}
+    .msg-ok{background:var(--success-soft);border:1px solid #bbf7d0;color:#166534;}
+    .msg-info{background:var(--primary-soft);border:1px solid #bfdbfe;color:#1e3a8a;}
+
+    /* 空状态 */
+    .empty{padding:40px 20px;text-align:center;color:var(--text-mute);background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:8px;}
+    .empty-icon{font-size:32px;margin-bottom:6px;opacity:.55;}
+
+    /* 模态 */
+    .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+    .modal-bg.show{opacity:1;pointer-events:auto;}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:440px;width:92%;box-shadow:0 20px 50px rgba(0,0,0,.15);transform:scale(.96);transition:transform .2s;}
+    .modal-bg.show .modal{transform:scale(1);}
+    .modal-title{font-size:16px;font-weight:700;margin:0 0 4px;}
+    .modal-sub{font-size:12px;color:var(--text-mute);margin:0 0 16px;}
+
+    /* 加密算法信息 */
+    .alg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+    .alg-tile{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;}
+    .alg-tile .lbl{font-size:11px;color:var(--text-mute);margin-bottom:2px;}
+    .alg-tile .val{font-size:14px;font-weight:700;}
+
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .sub-card{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:18px;}
+    .sub-title{font-size:14px;font-weight:700;margin:0 0 12px;}
+
+    @media (max-width: 900px){
+      .stat-row{grid-template-columns:repeat(2,1fr);}
+      .level-grid{grid-template-columns:repeat(2,1fr);}
+      .grid-2{grid-template-columns:1fr;}
+      .alg-grid{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a href="/" class="brand-mark">🔐</a>
+        <div>
+          <div class="brand-title">FTP 安全传输系统</div>
+          <div class="brand-sub">管理控制台 · Admin Panel</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div id="status-pill" class="status-pill"><span class="dot"></span><span id="status-text">服务运行中</span></div>
+        <div class="mono" style="font-size:11px;color:var(--text-mute);">CMD 8888 · DATA 8000 · UDP 9999</div>
+        <a href="/upload" class="btn btn-ghost btn-sm">📤 加密演示</a>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 退出</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">指令通道</div>
+        <div class="stat-value">8888</div>
+        <div class="stat-extra">TCP · 注册/登录/列表</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">数据通道</div>
+        <div class="stat-value">8000</div>
+        <div class="stat-extra">TCP · 二进制文件流</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">广播</div>
+        <div class="stat-value">9999</div>
+        <div class="stat-extra">UDP · 服务发现</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">注册用户</div>
+        <div class="stat-value" id="stat-users">--</div>
+        <div class="stat-extra" id="stat-users-extra">含待审/已批准</div>
+      </div>
+    </section>
+
+    <div class="tab-bar">
+      <div class="tab active" data-tab="control" onclick="switchTab('control')">⚙️ 服务控制</div>
+      <div class="tab" data-tab="users" onclick="switchTab('users')">👥 用户管理 <span class="tab-badge" id="badge-pending" style="display:none">0</span></div>
+      <div class="tab" data-tab="files" onclick="switchTab('files')">📁 四级文件目录</div>
+      <div class="tab" data-tab="level" onclick="switchTab('level')">📈 权限申请</div>
+      <div class="tab" data-tab="encrypt" onclick="switchTab('encrypt')">🔐 加密算法</div>
+    </div>
+
+    <div class="panel">
+      <!-- 服务控制 -->
+      <div class="pane active" id="pane-control">
+        <h3 class="panel-title">⚙️ 服务控制</h3>
+        <p class="panel-sub">启动 / 停止 Socket 服务，并设置管理员口令</p>
+
+        <div class="grid-2">
+          <div class="sub-card">
+            <h4 class="sub-title">🚀 服务状态</h4>
+            <div id="ctrl-msg" class="msg"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+              <div id="ctrl-status" class="status-pill stopped"><span class="dot"></span><span>未启动</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button class="btn btn-success" id="btn-start" onclick="doStart()">▶️ 启动服务</button>
+              <button class="btn btn-danger" id="btn-stop" onclick="doStop()" disabled>⏹️ 停止服务</button>
+              <button class="btn btn-primary" style="grid-column:1/-1;" onclick="doBroadcast()">📡 UDP 广播</button>
+            </div>
+            <div style="margin-top:14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;">
+              <div>CMD  : 8888 (TCP)  JSON 命令通道</div>
+              <div>DATA : 8000 (TCP)  文件二进制流</div>
+              <div>UDP  : 9999       局域网服务发现</div>
+            </div>
+          </div>
+
+          <div class="sub-card">
+            <h4 class="sub-title">🔑 管理员配置</h4>
+            <div id="cfg-msg" class="msg"></div>
+            <form onsubmit="return saveAdminCfg(event)">
+              <div class="field">
+                <label>管理员账号</label>
+                <input type="text" id="cfg-username" placeholder="admin" autocomplete="username">
+              </div>
+              <div class="field">
+                <label>登录密码（≥ 6 位）</label>
+                <input type="password" id="cfg-password" placeholder="设置登录密码" autocomplete="new-password" minlength="6">
+              </div>
+              <div class="field">
+                <label>验证密码（≥ 6 位）</label>
+                <input type="password" id="cfg-verify" placeholder="二次验证密码" autocomplete="off" minlength="6">
+              </div>
+              <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center;">💾 保存配置</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户管理 -->
+      <div class="pane" id="pane-users">
+        <h3 class="panel-title">👥 用户管理</h3>
+        <p class="panel-sub">审批注册申请 / 设置权限 / 删除账号。注：管理员修改用户等级后，目标用户的客户端会自动收到通知。</p>
+        <div id="users-msg" class="msg"></div>
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>用户名</th>
+                <th>邮箱</th>
+                <th>级别</th>
+                <th>状态</th>
+                <th>申请时间</th>
+                <th style="text-align:right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="6"><div class="empty"><div class="empty-icon">⏳</div>加载中…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 文件管理：4 级目录 -->
+      <div class="pane" id="pane-files">
+        <h3 class="panel-title">📁 四级文件目录</h3>
+        <p class="panel-sub">BLP 模型分四级存储，管理员可浏览/下载/删除任意级别文件。点击目录卡片可筛选下方文件列表。</p>
+
+        <div class="level-grid" id="level-grid"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;font-weight:600;">文件列表</span>
+            <span id="file-filter" style="font-size:12px;color:var(--text-mute);">（全部）</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-ghost" onclick="loadAll()">全部</button>
+            <button class="btn btn-sm btn-ghost" onclick="refreshFiles()">↻ 刷新</button>
+          </div>
+        </div>
+
+        <div id="files-msg" class="msg"></div>
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>文件名</th>
+                <th>所属目录</th>
+                <th>大小</th>
+                <th>修改时间</th>
+                <th style="text-align:right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="files-tbody">
+              <tr><td colspan="5"><div class="empty"><div class="empty-icon">⏳</div>加载中…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 权限申请 -->
+      <div class="pane" id="pane-level">
+        <h3 class="panel-title">📈 权限提升申请</h3>
+        <p class="panel-sub">批准/拒绝/调整用户权限升级请求。通过后客户端会在 8 秒内自动同步新等级。</p>
+        <div id="level-msg" class="msg"></div>
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>申请人</th>
+                <th>当前级别</th>
+                <th>申请级别</th>
+                <th>理由</th>
+                <th>申请时间</th>
+                <th style="text-align:right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="level-tbody">
+              <tr><td colspan="6"><div class="empty"><div class="empty-icon">⏳</div>加载中…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 加密算法 -->
+      <div class="pane" id="pane-encrypt">
+        <h3 class="panel-title">🔐 加密算法信息</h3>
+        <p class="panel-sub">系统当前采用的加密与哈希方案</p>
+        <div id="encrypt-info" class="alg-grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 模态：审批注册 -->
+  <div class="modal-bg" id="modal-approve">
+    <div class="modal">
+      <h3 class="modal-title">🔧 设置用户等级</h3>
+      <p class="modal-sub">用户 <b id="modal-user" style="color:var(--primary);">--</b></p>
+      <div class="field">
+        <label>授权级别</label>
+        <select id="modal-level">
+          <option value="1">公开 (Lv1) - 仅浏览</option>
+          <option value="2" selected>一般 (Lv2) - 可上传</option>
+          <option value="3">高级 (Lv3) - 可下载/删除</option>
+          <option value="4">特殊 (Lv4) - 管理员</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-approve')">取消</button>
+        <button class="btn btn-primary" onclick="confirmApprove()">✓ 确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态：处理权限提升 -->
+  <div class="modal-bg" id="modal-level">
+    <div class="modal">
+      <h3 class="modal-title">📈 处理权限申请</h3>
+      <p class="modal-sub">用户 <b id="modal-lv-user" style="color:var(--primary);">--</b></p>
+      <div class="field">
+        <label>最终级别</label>
+        <select id="modal-lv-level">
+          <option value="2">一般 (Lv2)</option>
+          <option value="3">高级 (Lv3)</option>
+          <option value="4">特殊 (Lv4)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-danger" onclick="confirmLevel('reject')">✗ 拒绝</button>
+        <button class="btn btn-success" onclick="confirmLevel('approve')">✓ 批准</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态：删除确认 -->
+  <div class="modal-bg" id="modal-delete">
+    <div class="modal">
+      <h3 class="modal-title">⚠️ 确认删除</h3>
+      <p class="modal-sub">用户 <b id="modal-del-user" style="color:var(--danger);">--</b> 的账号和文件将一并清理</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-delete')">取消</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">🗑️ 确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var _approve_username = '';
+    var _delete_username = '';
+    var _level_username = '';
+    var _level_target = 2;
+    var _allFiles = [];
+    var _currentFilter = 0;
+
+    // 4 级常量
+    var LEVEL_INFO = {
+      1: {name:'公开',  path:'ftp_root/公开/',  tag:'L1', color:'var(--l1)'},
+      2: {name:'一般',  path:'ftp_root/一般/',  tag:'L2', color:'var(--l2)'},
+      3: {name:'高级',  path:'ftp_root/高级/',  tag:'L3', color:'var(--l3)'},
+      4: {name:'特殊',  path:'ftp_root/特殊/',  tag:'L4', color:'var(--l4)'}
+    };
+
+    // ============= 鉴权 =============
+    var _admin = JSON.parse(localStorage.getItem('ftp_admin') || 'null');
+    if(!_admin){ alert('请先登录'); location.href='/login'; }
+
+    function logout(){
+      if(confirm('确定退出登录？')){
+        localStorage.removeItem('ftp_admin');
+        location.href='/login';
+      }
+    }
+
+    function escapeHtml(s){return (s||'').toString().replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+    function formatSize(b){
+      if(b<1024) return b+' B';
+      if(b<1024*1024) return (b/1024).toFixed(1)+' KB';
+      return (b/1024/1024).toFixed(1)+' MB';
+    }
+    function showMsg(id, html, kind){
+      var c = document.getElementById(id);
+      c.className = 'msg msg-' + (kind==='error'?'err':kind==='success'?'ok':'info') + ' show';
+      c.innerHTML = html;
+      if(kind === 'success' || kind === 'info'){
+        setTimeout(function(){ c.classList.remove('show'); }, 5000);
+      }
+    }
+
+    function switchTab(t){
+      document.querySelectorAll('.tab').forEach(function(e){
+        e.classList.toggle('active', e.dataset.tab === t);
+      });
+      document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('active');});
+      document.getElementById('pane-'+t).classList.add('active');
+      if(t === 'users') refreshUsers();
+      else if(t === 'files') refreshFiles();
+      else if(t === 'level') refreshLevel();
+      else if(t === 'control') refreshStatus();
+      else if(t === 'encrypt') refreshEncrypt();
+    }
+
+    // ============= 服务状态 =============
+    function refreshStatus(){
+      fetch('/api/status').then(r=>r.json()).then(function(d){
+        var pill = document.getElementById('status-pill');
+        var txt = document.getElementById('status-text');
+        var ctrl = document.getElementById('ctrl-status');
+        var btnS = document.getElementById('btn-start');
+        var btnT = document.getElementById('btn-stop');
+        if(d.running){
+          pill.classList.remove('stopped');
+          txt.textContent = '服务运行中 · CMD ' + d.port;
+          ctrl.classList.remove('stopped');
+          ctrl.querySelector('span:last-child').textContent = '✓ 服务运行中';
+          btnS.disabled = true; btnT.disabled = false;
+        } else {
+          pill.classList.add('stopped');
+          txt.textContent = '服务未启动';
+          ctrl.classList.add('stopped');
+          ctrl.querySelector('span:last-child').textContent = '未启动';
+          btnS.disabled = false; btnT.disabled = true;
+        }
+      });
+    }
+    setInterval(refreshStatus, 5000);
+    refreshStatus();
+
+    function doStart(){
+      fetch('/api/service/start',{method:'POST'}).then(r=>r.json()).then(function(d){
+        if(d.success){
+          showMsg('ctrl-msg','✅ Socket 服务已启动','success');
+          refreshStatus();
+        }
+      });
+    }
+    function doStop(){
+      if(!confirm('停止后将断开所有客户端连接，确定？')) return;
+      fetch('/api/service/stop',{method:'POST'}).then(r=>r.json()).then(function(d){
+        if(d.success){
+          showMsg('ctrl-msg','⏹️ Socket 服务已停止','info');
+          refreshStatus();
+        }
+      });
+    }
+    function doBroadcast(){
+      fetch('/api/service/broadcast',{method:'POST'}).then(r=>r.json()).then(function(d){
+        if(d.ip){
+          showMsg('ctrl-msg','📡 广播已发送 · IP='+d.ip+' · 主机='+d.hostname,'success');
+        }
+      });
+    }
+
+    // ============= 管理员配置 =============
+    function saveAdminCfg(e){
+      e.preventDefault();
+      var u = document.getElementById('cfg-username').value.trim();
+      var p = document.getElementById('cfg-password').value;
+      var v = document.getElementById('cfg-verify').value;
+      if(!u || !p || !v){ showMsg('cfg-msg','❌ 三项均不能为空','error'); return false; }
+      if(p.length < 6 || v.length < 6){ showMsg('cfg-msg','❌ 密码/验证密码不得低于 6 位','error'); return false; }
+      fetch('/api/admin/config',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username:u, password:p, verify_password:v})
+      }).then(r=>r.json()).then(function(d){
+        if(d.success){
+          showMsg('cfg-msg','✅ 配置已保存（账号='+d.username+'）','success');
+          document.getElementById('cfg-password').value='';
+          document.getElementById('cfg-verify').value='';
+        } else {
+          showMsg('cfg-msg','❌ '+(d.msg||'保存失败'),'error');
+        }
+      });
+      return false;
+    }
+
+    // ============= 用户管理 =============
+    function levelBadge(level){
+      var map = {
+        1:'<span class="badge b-l1">公开 Lv1</span>',
+        2:'<span class="badge b-l2">一般 Lv2</span>',
+        3:'<span class="badge b-l3">高级 Lv3</span>',
+        4:'<span class="badge b-l4">特殊 Lv4</span>'
+      };
+      return map[level] || '<span class="badge b-l1">Lv'+level+'</span>';
+    }
+    function statusBadge(s){
+      if(s === 'approved') return '<span class="badge b-approved">✓ 已批准</span>';
+      if(s === 'pending') return '<span class="badge b-pending">⏳ 待审核</span>';
+      if(s === 'rejected') return '<span class="badge b-rejected">✗ 已拒绝</span>';
+      return '<span class="badge b-l1">'+s+'</span>';
+    }
+    function refreshUsers(){
+      fetch('/api/users').then(r=>r.json()).then(function(list){
+        var pending = list.filter(function(u){return u.status==='pending';}).length;
+        var badge = document.getElementById('badge-pending');
+        badge.textContent = pending;
+        badge.style.display = pending > 0 ? 'inline-block' : 'none';
+        document.getElementById('stat-users').textContent = list.length;
+
+        var body = document.getElementById('users-tbody');
+        if(list.length === 0){
+          body.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div>暂无用户</div></td></tr>';
+          return;
+        }
+        body.innerHTML = list.map(function(u){
+          var isAdmin = u.username === (_admin && _admin.username);
+          var ops = '<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">' +
+            '<button class="btn btn-sm btn-primary" onclick="showApprove(\''+u.username+'\')">🔧 设级别</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="showDelete(\''+u.username+'\')">🗑️ 删除</button>' +
+          '</div>';
+          return '<tr>' +
+            '<td style="font-weight:600;">'+escapeHtml(u.username)+(isAdmin?' <span class="badge b-l4" style="font-size:9px;">我</span>':'')+'</td>' +
+            '<td style="color:var(--text-mute);">'+escapeHtml(u.email||'—')+'</td>' +
+            '<td>'+levelBadge(u.level)+'</td>' +
+            '<td>'+statusBadge(u.status)+'</td>' +
+            '<td style="color:var(--text-mute);font-size:11px;">'+escapeHtml(u.apply_time||'—')+'</td>' +
+            '<td>'+ops+'</td>' +
+          '</tr>';
+        }).join('');
+      });
+    }
+
+    function showApprove(username){
+      _approve_username = username;
+      document.getElementById('modal-user').textContent = username;
+      // 默认设为管理员当前正在改的等级
+      document.getElementById('modal-level').value = '2';
+      document.getElementById('modal-approve').classList.add('show');
+    }
+    function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+    function confirmApprove(){
+      var level = parseInt(document.getElementById('modal-level').value);
+      fetch('/api/users/set-level', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username:_approve_username, level:level})
+      }).then(r=>r.json()).then(function(d){
+        closeModal('modal-approve');
+        if(d.success){
+          showMsg('users-msg','✅ 已将 '+_approve_username+' 设为 Lv'+level+'（用户端 8 秒内自动同步）','success');
+          refreshUsers();
+        }
+      });
+    }
+
+    function showDelete(username){
+      _delete_username = username;
+      document.getElementById('modal-del-user').textContent = username;
+      document.getElementById('modal-delete').classList.add('show');
+    }
+    function confirmDelete(){
+      fetch('/api/users/delete', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username:_delete_username})
+      }).then(r=>r.json()).then(function(d){
+        closeModal('modal-delete');
+        if(d.success){
+          showMsg('users-msg','🗑️ 已删除用户 '+_delete_username,'info');
+          refreshUsers();
+        }
+      });
+    }
+
+    // ============= 文件管理：4 级目录 =============
+    function renderLevelCards(){
+      var grid = document.getElementById('level-grid');
+      var counts = {1:0, 2:0, 3:0, 4:0};
+      _allFiles.forEach(function(f){ counts[f.level_num] = (counts[f.level_num]||0) + 1; });
+      var html = '';
+      for(var lv=1; lv<=4; lv++){
+        var info = LEVEL_INFO[lv];
+        var stateText = counts[lv] > 0 ? '📂 ' + counts[lv] + ' 个文件' : '（空）';
+        html += '<div class="level-card" style="cursor:pointer;" onclick="filterByLevel('+lv+')">' +
+          '<div class="level-head">' +
+            '<div class="level-name">'+info.name+'</div>' +
+            '<div class="level-tag" style="background:'+info.color+';">'+info.tag+'</div>' +
+          '</div>' +
+          '<div class="level-path">'+info.path+'</div>' +
+          '<div class="level-count">'+counts[lv]+'</div>' +
+          '<div class="level-state">'+stateText+'</div>' +
+        '</div>';
+      }
+      grid.innerHTML = html;
+    }
+    function filterByLevel(lv){
+      _currentFilter = lv;
+      document.getElementById('file-filter').textContent = '（' + LEVEL_INFO[lv].name + '）';
+      renderFileTable();
+    }
+    function loadAll(){
+      _currentFilter = 0;
+      document.getElementById('file-filter').textContent = '（全部）';
+      renderFileTable();
+    }
+
+    function renderFileTable(){
+      var body = document.getElementById('files-tbody');
+      var list = _currentFilter ? _allFiles.filter(function(f){return f.level_num === _currentFilter;}) : _allFiles;
+      if(list.length === 0){
+        body.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">📂</div>该目录下暂无文件</div></td></tr>';
+        return;
+      }
+      body.innerHTML = list.map(function(f){
+        return '<tr>' +
+          '<td style="font-weight:600;">📄 '+escapeHtml(f.name)+'</td>' +
+          '<td><span class="badge b-l'+f.level_num+'">'+escapeHtml(f.level)+'</span></td>' +
+          '<td style="color:var(--text-mute);">'+formatSize(f.size)+'</td>' +
+          '<td style="color:var(--text-mute);font-size:12px;">'+new Date(f.mtime*1000).toLocaleString('zh-CN')+'</td>' +
+          '<td style="text-align:right;">' +
+            '<a href="/api/download?filename='+encodeURIComponent(f.name)+'&level='+encodeURIComponent(f.level)+'" class="btn btn-sm btn-primary" style="text-decoration:none;">⬇ 下载</a> ' +
+            '<button class="btn btn-sm btn-danger" onclick="deleteFile(\''+escapeHtml(f.name).replace(/'/g,"\\'")+'\',\''+escapeHtml(f.level)+'\')">🗑</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function refreshFiles(){
+      fetch('/api/files/all').then(r=>r.json()).then(function(list){
+        _allFiles = list;
+        renderLevelCards();
+        renderFileTable();
+      });
+    }
+    function deleteFile(name, level){
+      if(!confirm('确定删除 '+name+' ？')) return;
+      fetch('/api/files/delete', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({filename:name, level:level})
+      }).then(r=>r.json()).then(function(d){
+        if(d.success){
+          showMsg('files-msg','🗑️ 已删除','info');
+          refreshFiles();
+        }
+      });
+    }
+
+    // ============= 权限申请 =============
+    function refreshLevel(){
+      fetch('/api/level-requests').then(r=>r.json()).then(function(list){
+        var body = document.getElementById('level-tbody');
+        if(list.length === 0){
+          body.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div>暂无申请</div></td></tr>';
+          return;
+        }
+        body.innerHTML = list.map(function(r){
+          return '<tr>' +
+            '<td style="font-weight:600;">'+escapeHtml(r.username)+'</td>' +
+            '<td>'+levelBadge(r.current_level)+'</td>' +
+            '<td>'+levelBadge(r.target_level)+'</td>' +
+            '<td style="color:var(--text-mute);font-size:12px;max-width:240px;">'+escapeHtml(r.reason||'—')+'</td>' +
+            '<td style="color:var(--text-mute);font-size:11px;">'+escapeHtml(r.request_time||'—')+'</td>' +
+            '<td><div style="display:flex;gap:6px;justify-content:flex-end;">' +
+              '<button class="btn btn-sm btn-danger" onclick="quickLevel(\''+r.username+'\',\'reject\')">✗ 拒绝</button>' +
+              '<button class="btn btn-sm btn-success" onclick="showLevel(\''+r.username+'\','+r.target_level+')">✓ 批准</button>' +
+            '</div></td>' +
+          '</tr>';
+        }).join('');
+      });
+    }
+    function showLevel(username, target){
+      _level_username = username;
+      _level_target = target;
+      document.getElementById('modal-lv-user').textContent = username;
+      document.getElementById('modal-lv-level').value = target;
+      document.getElementById('modal-level').classList.add('show');
+    }
+    function quickLevel(username, action){
+      fetch('/api/level-requests/process', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username:username, action:action})
+      }).then(r=>r.json()).then(function(d){
+        if(d.success){
+          showMsg('level-msg','✓ '+username+' 申请已 '+action,'success');
+          refreshLevel();
+        }
+      });
+    }
+    function confirmLevel(action){
+      var lv = parseInt(document.getElementById('modal-lv-level').value);
+      fetch('/api/level-requests/process', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username:_level_username, action:action, level:lv})
+      }).then(r=>r.json()).then(function(d){
+        closeModal('modal-level');
+        if(d.success){
+          showMsg('level-msg', '✓ '+_level_username+' 已处理（用户端 8 秒内自动同步）','success');
+          refreshLevel();
+        }
+      });
+    }
+
+    // ============= 加密信息 =============
+    function refreshEncrypt(){
+      fetch('/api/encrypt/info').then(r=>r.json()).then(function(d){
+        document.getElementById('encrypt-info').innerHTML =
+          '<div class="alg-tile"><div class="lbl">对称加密算法</div><div class="val">'+d.algorithm+'</div></div>' +
+          '<div class="alg-tile"><div class="lbl">密钥长度</div><div class="val">'+d.key_length+' bits</div></div>' +
+          '<div class="alg-tile"><div class="lbl">填充方案</div><div class="val">'+d.padding+'</div></div>' +
+          '<div class="alg-tile"><div class="lbl">文件分块</div><div class="val">'+d.chunk_size+' B</div></div>' +
+          '<div class="alg-tile" style="grid-column:1/-1;"><div class="lbl">IV 派生</div><div class="val" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;">'+d.iv_derivation+'</div></div>' +
+          '<div class="alg-tile" style="grid-column:1/-1;"><div class="lbl">密码哈希</div><div class="val" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;">'+d.hash_algorithm+' (单向不可逆)</div></div>';
+      });
+    }
+
+    // 启动加载
+    refreshUsers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>客户端工作台 · FTP 安全传输系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* 朴素配色：浅灰背景 + 深灰文字 + 蓝主色 */
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --text: #1f2937;
+      --text-soft: #4b5563;
+      --text-mute: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --info: #0891b2;
+      --l1: #94a3b8;
+      --l2: #2563eb;
+      --l3: #7c3aed;
+      --l4: #be185d;
+    }
+    *{font-family:'Inter',system-ui,-apple-system,'Microsoft YaHei',sans-serif;box-sizing:border-box;}
+    code,.mono{font-family:'JetBrains Mono',Consolas,monospace;}
+
+    body{
+      margin:0;min-height:100vh;color:var(--text);
+      background:var(--bg);
+      font-size:14px;
+    }
+    a{color:var(--primary);text-decoration:none;}
+    a:hover{text-decoration:underline;}
+
+    /* 顶部条 */
+    .topbar{
+      background:var(--surface);
+      border-bottom:1px solid var(--border);
+      padding:12px 24px;
+      position:sticky;top:0;z-index:50;
+    }
+    .topbar-inner{
+      max-width:1280px;margin:0 auto;
+      display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    }
+    .brand{display:flex;align-items:center;gap:10px;}
+    .brand-mark{
+      width:34px;height:34px;border-radius:8px;
+      background:var(--primary);
+      color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;
+    }
+    .brand-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.2;}
+    .brand-sub{font-size:12px;color:var(--text-mute);line-height:1.2;}
+
+    .user-pill{
+      display:flex;align-items:center;gap:10px;
+      padding:6px 12px;border:1px solid var(--border);
+      border-radius:999px;background:var(--surface-2);
+    }
+    .avatar{
+      width:30px;height:30px;border-radius:50%;
+      background:var(--primary);color:#fff;
+      display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
+    }
+    .user-name{font-size:13px;font-weight:600;}
+    .user-meta{font-size:11px;color:var(--text-mute);}
+
+    /* 按钮 */
+    .btn{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:8px 14px;border-radius:6px;border:1px solid transparent;
+      font-size:13px;font-weight:600;cursor:pointer;
+      transition:all .15s;background:var(--surface);color:var(--text);
+    }
+    .btn:hover{background:var(--surface-2);}
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+    .btn-primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);}
+    .btn-danger{color:var(--danger);border-color:var(--border);}
+    .btn-danger:hover{background:#fef2f2;border-color:var(--danger);}
+    .btn-ghost{border-color:var(--border);color:var(--text-soft);}
+    .btn-ghost:hover{background:var(--surface-2);}
+    .btn-sm{padding:4px 10px;font-size:12px;}
+
+    /* 布局 */
+    main{max-width:1280px;margin:0 auto;padding:20px 24px 40px;}
+
+    .stat-row{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;
+    }
+    .stat-card{
+      background:var(--surface);border:1px solid var(--border);border-radius:8px;
+      padding:14px 16px;
+    }
+    .stat-label{font-size:12px;color:var(--text-mute);margin-bottom:4px;}
+    .stat-value{font-size:22px;font-weight:700;color:var(--text);}
+    .stat-value.mono{font-family:'JetBrains Mono',monospace;}
+    .stat-extra{font-size:12px;color:var(--text-mute);margin-top:4px;}
+
+    /* 等级刷新通知 */
+    .level-toast{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 14px;background:#fef3c7;border:1px solid #fde68a;
+      color:#92400e;border-radius:6px;margin-bottom:14px;font-size:13px;
+    }
+
+    /* Tab 栏 */
+    .tab-bar{
+      display:flex;gap:2px;border-bottom:1px solid var(--border);
+      background:var(--surface);padding:0 12px;border-radius:8px 8px 0 0;
+    }
+    .tab{
+      padding:10px 16px;font-size:13px;font-weight:600;color:var(--text-mute);
+      cursor:pointer;border-bottom:2px solid transparent;
+      margin-bottom:-1px;display:flex;align-items:center;gap:6px;
+    }
+    .tab:hover{color:var(--text);}
+    .tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+
+    .panel{
+      background:var(--surface);border:1px solid var(--border);
+      border-top:none;border-radius:0 0 8px 8px;padding:20px;
+    }
+    .pane{display:none;}
+    .pane.active{display:block;}
+
+    .panel-title{font-size:15px;font-weight:700;margin:0 0 4px;}
+    .panel-sub{font-size:12px;color:var(--text-mute);margin:0 0 14px;}
+
+    /* 4 级目录卡片 */
+    .level-grid{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;
+    }
+    .level-card{
+      background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+      padding:14px 16px;display:flex;flex-direction:column;gap:6px;
+    }
+    .level-card-head{display:flex;align-items:center;justify-content:space-between;}
+    .level-name{font-size:14px;font-weight:700;}
+    .level-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;color:#fff;letter-spacing:.5px;}
+    .level-path{font-size:11px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;}
+    .level-count{font-size:18px;font-weight:700;color:var(--text);}
+    .level-state{font-size:12px;color:var(--text-mute);}
+
+    /* 文件表格 */
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    thead th{
+      padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mute);
+      background:var(--surface-2);border-bottom:1px solid var(--border);
+      font-size:12px;letter-spacing:.3px;
+    }
+    tbody td{
+      padding:10px 12px;border-bottom:1px solid var(--border);
+    }
+    tbody tr:hover{background:var(--surface-2);}
+    tbody tr:last-child td{border-bottom:none;}
+    .badge{
+      display:inline-block;padding:2px 8px;font-size:11px;font-weight:600;border-radius:4px;
+      color:#fff;letter-spacing:.3px;
+    }
+    .b-l1{background:var(--l1);}
+    .b-l2{background:var(--l2);}
+    .b-l3{background:var(--l3);}
+    .b-l4{background:var(--l4);}
+
+    .empty{
+      padding:40px 20px;text-align:center;color:var(--text-mute);
+      background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:8px;
+    }
+    .empty-icon{font-size:32px;margin-bottom:6px;opacity:.55;}
+
+    /* 上传区 */
+    .drop-area{
+      border:2px dashed var(--border-strong);border-radius:8px;padding:32px;
+      text-align:center;cursor:pointer;background:var(--surface-2);
+      transition:all .2s;
+    }
+    .drop-area:hover,.drop-area.drag{border-color:var(--primary);background:var(--primary-soft);}
+    .drop-icon{font-size:36px;margin-bottom:8px;}
+    .progress{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:10px;}
+    .progress-bar{height:100%;background:var(--primary);width:0;transition:width .25s;}
+
+    /* 表单 */
+    .field{margin-bottom:12px;}
+    .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:4px;}
+    .field input,.field select,.field textarea{
+      width:100%;padding:8px 11px;border:1px solid var(--border-strong);
+      border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;
+      transition:border .15s,box-shadow .15s;
+    }
+    .field input:focus,.field select:focus,.field textarea:focus{
+      outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);
+    }
+    .field textarea{resize:vertical;min-height:80px;font-family:inherit;}
+
+    .msg{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px;display:none;}
+    .msg.show{display:block;}
+    .msg-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+    .msg-ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
+    .msg-info{background:var(--primary-soft);border:1px solid #bfdbfe;color:#1e3a8a;}
+
+    /* ==== 下载加解密 3 列可视化 ==== */
+    .flow-3col{
+      display:grid;grid-template-columns:1fr 60px 1fr 60px 1fr;gap:10px;align-items:stretch;
+    }
+    .flow-col{
+      background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+      display:flex;flex-direction:column;min-height:340px;overflow:hidden;
+    }
+    .flow-col-head{
+      padding:10px 12px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .flow-col-head .col-title{font-size:13px;font-weight:700;}
+    .flow-col-head .col-size{font-size:11px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;}
+    .col-plain .flow-col-head{background:#f0fdf4;}
+    .col-cipher .flow-col-head{background:#fef2f2;}
+    .col-decrypt .flow-col-head{background:#eff6ff;}
+    .flow-col-body{
+      padding:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.55;
+      overflow:auto;flex:1;white-space:pre-wrap;word-break:break-all;
+      color:var(--text);
+    }
+    .col-plain .flow-col-body{color:#166534;}
+    .col-cipher .flow-col-body{color:#991b1b;}
+    .col-decrypt .flow-col-body{color:#1e3a8a;}
+    .flow-arrow{
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;color:var(--text-mute);
+    }
+    .flow-arrow-inner{
+      width:40px;height:40px;border-radius:50%;
+      background:var(--surface);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;color:var(--primary);
+    }
+
+    .flow-toolbar{
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px;
+      padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+    }
+    .flow-toolbar select{
+      padding:7px 10px;border:1px solid var(--border-strong);border-radius:6px;
+      background:var(--surface);font-size:13px;min-width:200px;
+    }
+    .flow-step{
+      display:flex;align-items:center;gap:8px;padding:10px 12px;
+      background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
+      font-size:12px;margin-top:8px;
+    }
+    .flow-step .step-no{
+      width:22px;height:22px;border-radius:50%;
+      background:var(--primary);color:#fff;font-weight:700;font-size:12px;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .flow-step.active{border-color:var(--primary);background:var(--primary-soft);}
+    .flow-step.done{background:#f0fdf4;border-color:#86efac;color:#166534;}
+    .flow-step.done .step-no{background:var(--success);}
+
+    .info-grid{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px;
+    }
+    .info-tile{
+      padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
+    }
+    .info-tile .lbl{font-size:11px;color:var(--text-mute);margin-bottom:2px;}
+    .info-tile .val{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+
+    /* 等级刷新 toast */
+    .refresh-toast{
+      position:fixed;top:16px;right:16px;z-index:100;
+      background:var(--surface);border:1px solid var(--primary);border-left:4px solid var(--primary);
+      padding:12px 16px;border-radius:6px;font-size:13px;
+      box-shadow:0 6px 20px rgba(0,0,0,.08);
+      display:none;max-width:320px;
+    }
+    .refresh-toast.show{display:block;animation:slideIn .3s ease-out;}
+    @keyframes slideIn{from{transform:translateX(20px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+    @media (max-width: 900px){
+      .stat-row{grid-template-columns:repeat(2,1fr);}
+      .level-grid{grid-template-columns:repeat(2,1fr);}
+      .flow-3col{grid-template-columns:1fr;}
+      .flow-arrow{flex-direction:row;justify-content:center;}
+      .flow-arrow-inner{transform:rotate(90deg);}
+      .info-grid{grid-template-columns:repeat(2,1fr);}
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a href="/" class="brand-mark">🔐</a>
+        <div>
+          <div class="brand-title">FTP 安全传输系统</div>
+          <div class="brand-sub">客户端工作台 · Client Workspace</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div id="user-pill" class="user-pill" style="display:none;">
+          <div class="avatar" id="user-avatar">--</div>
+          <div>
+            <div class="user-name" id="user-name">--</div>
+            <div class="user-meta"><span id="user-level">--</span> · <span id="user-email">--</span></div>
+          </div>
+        </div>
+        <a href="/upload" class="btn btn-ghost btn-sm">📤 加密演示</a>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 退出</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="level-toast" class="level-toast" style="display:none;">
+      🔔 您的权限刚刚被更新，点击下方按钮应用变更。
+      <button class="btn btn-sm btn-primary" onclick="forceRefreshLevel()" style="margin-left:auto;">↻ 立即应用</button>
+    </div>
+
+    <section class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">可访问文件</div>
+        <div class="stat-value" id="st-files">--</div>
+        <div class="stat-extra" id="st-files-extra">含 Lv1~当前等级目录</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">当前权限</div>
+        <div class="stat-value" id="st-level">--</div>
+        <div class="stat-extra" id="st-level-extra">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">服务状态</div>
+        <div class="stat-value" id="st-status">--</div>
+        <div class="stat-extra" id="st-status-extra">CMD 8888 / DATA 8000</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">加密算法</div>
+        <div class="stat-value" id="st-alg">DES</div>
+        <div class="stat-extra" id="st-alg-extra">CBC · PKCS#7 · SHA-256</div>
+      </div>
+    </section>
+
+    <div class="tab-bar">
+      <div class="tab active" data-tab="files" onclick="switchTab('files')">📁 文件浏览</div>
+      <div class="tab" data-tab="download" onclick="switchTab('download')">🔐 下载加解密流程</div>
+      <div class="tab" data-tab="upload" onclick="switchTab('upload')">📤 上传文件</div>
+      <div class="tab" data-tab="level" onclick="switchTab('level')">📈 权限提升</div>
+      <div class="tab" data-tab="passwd" onclick="switchTab('passwd')">🔑 修改密码</div>
+    </div>
+
+    <div class="panel">
+      <!-- 文件浏览 -->
+      <div class="pane active" id="pane-files">
+        <h3 class="panel-title">📁 四级文件目录</h3>
+        <p class="panel-sub">按 BLP 模型分级存放，权限越高可访问的目录越多。点击目录卡片可快速筛选下方文件列表。</p>
+
+        <div class="level-grid" id="level-grid"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;font-weight:600;">文件列表</span>
+            <span id="file-filter" style="font-size:12px;color:var(--text-mute);">（全部）</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-ghost" onclick="loadAll()">全部</button>
+            <button class="btn btn-sm btn-ghost" onclick="refreshFiles()">↻ 刷新</button>
+          </div>
+        </div>
+
+        <div id="files-msg" class="msg"></div>
+        <div id="files-list" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div class="empty"><div class="empty-icon">⏳</div>加载中…</div>
+        </div>
+      </div>
+
+      <!-- 下载加解密 3 列流程 -->
+      <div class="pane" id="pane-download">
+        <h3 class="panel-title">🔐 下载加解密流程演示</h3>
+        <p class="panel-sub">选择目录中的任意文件，按顺序展示：服务器密文 → 客户端接收 → 客户端解密 → 还原明文。</p>
+
+        <div class="flow-toolbar">
+          <label style="font-size:13px;font-weight:600;">选择文件：</label>
+          <select id="dl-file" onchange="onDownloadFileChange()">
+            <option value="">-- 请先选择文件 --</option>
+          </select>
+          <button class="btn btn-primary" onclick="doDownloadFlow()">▶ 执行下载流程</button>
+          <button class="btn btn-ghost" onclick="resetFlow()">↻ 重置</button>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-tile"><div class="lbl">权限等级</div><div class="val" id="info-level">--</div></div>
+          <div class="info-tile"><div class="lbl">存储路径</div><div class="val" id="info-path" style="font-size:11px;">--</div></div>
+          <div class="info-tile"><div class="lbl">明文大小</div><div class="val" id="info-plain-size">-- B</div></div>
+          <div class="info-tile"><div class="lbl">密文大小</div><div class="val" id="info-cipher-size">-- B</div></div>
+        </div>
+
+        <!-- 流程步骤 -->
+        <div id="flow-steps" style="margin-top:12px;">
+          <div class="flow-step" data-step="1">
+            <span class="step-no">1</span>
+            <span><b>读取密文：</b>客户端向服务器请求 <span class="mono">/api/client/download/cipher</span>，服务器从 <span class="mono" id="step1-path">--</span> 读取 .enc 密文并 Base64 编码返回。</span>
+          </div>
+          <div class="flow-step" data-step="2">
+            <span class="step-no">2</span>
+            <span><b>显示密文：</b>客户端展示服务器返回的密文十六进制（含 <span class="mono">[8B total][4B chunk_len][8B IV][cipher]</span> 头）。</span>
+          </div>
+          <div class="flow-step" data-step="3">
+            <span class="step-no">3</span>
+            <span><b>请求解密：</b>客户端把 Base64 密文回传给服务器 <span class="mono">/api/client/download/decrypt</span>，使用真实 DES-CBC 密钥解出明文。</span>
+          </div>
+          <div class="flow-step" data-step="4">
+            <span class="step-no">4</span>
+            <span><b>还原对比：</b>将解密后的明文与原文件对比，验证加解密一致性。</span>
+          </div>
+        </div>
+
+        <!-- 3 列可视化 -->
+        <div class="flow-3col" style="margin-top:14px;">
+          <div class="flow-col col-plain">
+            <div class="flow-col-head">
+              <div class="col-title">① 原文件（明文）</div>
+              <div class="col-size" id="plain-size">-- B</div>
+            </div>
+            <div class="flow-col-body" id="plain-text">点击「执行下载流程」开始演示</div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-inner">→</div></div>
+          <div class="flow-col col-cipher">
+            <div class="flow-col-head">
+              <div class="col-title">② 服务器密文</div>
+              <div class="col-size" id="cipher-size">-- B</div>
+            </div>
+            <div class="flow-col-body" id="cipher-text">DES-CBC 加密后的密文（Base64 → Hex）</div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-inner">→</div></div>
+          <div class="flow-col col-decrypt">
+            <div class="flow-col-head">
+              <div class="col-title">③ 客户端解密后</div>
+              <div class="col-size" id="decrypt-size">-- B</div>
+            </div>
+            <div class="flow-col-body" id="decrypt-text">用密钥还原的明文</div>
+          </div>
+        </div>
+
+        <div id="dl-msg" class="msg" style="margin-top:14px;"></div>
+      </div>
+
+      <!-- 上传 -->
+      <div class="pane" id="pane-upload">
+        <h3 class="panel-title">📤 上传文件</h3>
+        <p class="panel-sub">文件上传后自动 DES-CBC 加密，按权限级别存入对应目录。</p>
+        <div id="up-msg" class="msg"></div>
+        <div class="drop-area" id="drop" onclick="document.getElementById('file-in').click()">
+          <div class="drop-icon">📤</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">点击或拖拽文件到此处上传</div>
+          <div style="font-size:12px;color:var(--text-mute);">支持任意类型 · 自动 DES-CBC 加密 · 限制 50MB</div>
+          <input type="file" id="file-in" hidden onchange="doUpload(this.files[0])">
+        </div>
+        <div id="up-status" style="display:none;margin-top:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <div id="up-name" style="font-size:13px;font-weight:600;">--</div>
+            <div id="up-pct" style="font-size:12px;color:var(--text-mute);">0%</div>
+          </div>
+          <div class="progress"><div class="progress-bar" id="up-bar"></div></div>
+          <div id="up-detail" style="font-size:12px;color:var(--text-mute);margin-top:8px;">就绪</div>
+        </div>
+      </div>
+
+      <!-- 权限提升 -->
+      <div class="pane" id="pane-level">
+        <h3 class="panel-title">📈 申请权限提升</h3>
+        <p class="panel-sub">提交申请后由管理员审批。当前等级：<b id="cur-level-name">--</b></p>
+        <div id="lvl-msg" class="msg"></div>
+        <div style="max-width:480px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <form onsubmit="return requestLvUp(event)">
+            <div class="field">
+              <label>目标级别</label>
+              <select id="lvl-target">
+                <option value="2">一般 (Lv2) - 浏览 + 上传</option>
+                <option value="3">高级 (Lv3) - 浏览 + 上传 + 下载/删除</option>
+                <option value="4">特殊 (Lv4) - 管理员权限</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>申请理由</label>
+              <textarea id="lvl-reason" rows="3" placeholder="请详细说明申请理由" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">📤 提交申请</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- 修改密码 -->
+      <div class="pane" id="pane-passwd">
+        <h3 class="panel-title">🔑 修改密码</h3>
+        <p class="panel-sub">修改后立即生效，旧密码作废。</p>
+        <div id="pw-msg" class="msg"></div>
+        <div style="max-width:400px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <form onsubmit="return changePw(event)">
+            <div class="field">
+              <label>当前密码</label>
+              <input type="password" id="pw-old" autocomplete="current-password" required>
+            </div>
+            <div class="field">
+              <label>新密码（≥ 6 位）</label>
+              <input type="password" id="pw-new" autocomplete="new-password" minlength="6" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">🔄 立即修改</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="refresh-toast" class="refresh-toast">
+    <div style="font-weight:600;margin-bottom:4px;">🔔 权限已更新</div>
+    <div id="refresh-toast-msg" style="font-size:12px;color:var(--text-mute);">管理员刚刚修改了您的等级</div>
+  </div>
+
+  <script>
+    // ============= 鉴权 =============
+    var _cli = JSON.parse(localStorage.getItem('ftp_client') || 'null');
+    if(!_cli){ alert('请先登录'); location.href='/login'; }
+
+    var _lastLevel = _cli.level;
+    var _allFiles = [];
+
+    // 4 级常量
+    var LEVEL_INFO = {
+      1: {name:'公开',  path:'ftp_root/公开/',  tag:'L1', color:'var(--l1)', desc:'任何注册用户可浏览'},
+      2: {name:'一般',  path:'ftp_root/一般/',  tag:'L2', color:'var(--l2)', desc:'可浏览 + 上传'},
+      3: {name:'高级',  path:'ftp_root/高级/',  tag:'L3', color:'var(--l3)', desc:'可下载/删除自己等级及以下'},
+      4: {name:'特殊',  path:'ftp_root/特殊/',  tag:'L4', color:'var(--l4)', desc:'管理员·全部权限'}
+    };
+
+    document.getElementById('user-name').textContent = _cli.username;
+    document.getElementById('user-email').textContent = _cli.email || '—';
+    document.getElementById('user-level').textContent = _cli.level_name || ('Lv'+_cli.level);
+    document.getElementById('user-avatar').textContent = (_cli.username||'?')[0].toUpperCase();
+    document.getElementById('user-pill').style.display = 'flex';
+    document.getElementById('st-level').textContent = _cli.level_name || ('Lv'+_cli.level);
+    document.getElementById('st-level-extra').textContent = LEVEL_INFO[_cli.level].desc;
+    document.getElementById('cur-level-name').textContent = _cli.level_name || ('Lv'+_cli.level);
+
+    function escapeHtml(s){return (s||'').toString().replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+    function formatSize(b){
+      if(b<1024) return b+' B';
+      if(b<1024*1024) return (b/1024).toFixed(1)+' KB';
+      return (b/1024/1024).toFixed(1)+' MB';
+    }
+    function showMsg(id, html, kind){
+      var c = document.getElementById(id);
+      c.className = 'msg msg-' + (kind==='error'?'err':kind==='success'?'ok':'info') + ' show';
+      c.innerHTML = html;
+      if(kind === 'success' || kind === 'info'){
+        setTimeout(function(){ c.classList.remove('show'); }, 5000);
+      }
+    }
+
+    function logout(){
+      if(confirm('确定退出？')){
+        fetch('/api/client/logout',{method:'POST'}).catch(function(){});
+        localStorage.removeItem('ftp_client');
+        location.href='/login';
+      }
+    }
+
+    function switchTab(t){
+      document.querySelectorAll('.tab').forEach(function(e){
+        e.classList.toggle('active', e.dataset.tab === t);
+      });
+      document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('active');});
+      document.getElementById('pane-'+t).classList.add('active');
+      if(t === 'download') populateDownloadSelect();
+    }
+
+    // ============= 服务状态 =============
+    function refreshStatus(){
+      fetch('/api/status').then(r=>r.json()).then(function(d){
+        var el = document.getElementById('st-status');
+        el.textContent = d.running ? '运行中' : '已停止';
+        el.style.color = d.running ? 'var(--success)' : 'var(--danger)';
+      });
+      fetch('/api/encrypt/info').then(r=>r.json()).then(function(d){
+        document.getElementById('st-alg').textContent = d.algorithm.replace('DES-CBC','DES');
+      });
+    }
+    refreshStatus();
+
+    // ============= 等级刷新（核心：解决管理员改了权限客户端无感知的 bug） =============
+    function checkLevelChange(){
+      fetch('/api/client/refresh?username='+encodeURIComponent(_cli.username))
+        .then(r=>r.json())
+        .then(function(d){
+          if(!d.success) return;
+          // 服务端最新等级和本地不一致
+          if(d.level !== _lastLevel){
+            var oldLv = _lastLevel;
+            _lastLevel = d.level;
+            _cli.level = d.level;
+            _cli.level_name = d.level_name;
+            _cli.email = d.email || _cli.email;
+            localStorage.setItem('ftp_client', JSON.stringify(_cli));
+            // 顶部通知
+            showLevelToast(oldLv, d.level, d.level_name);
+            // 顶部条更新
+            document.getElementById('user-level').textContent = d.level_name;
+            document.getElementById('st-level').textContent = d.level_name;
+            document.getElementById('st-level-extra').textContent = LEVEL_INFO[d.level].desc;
+            document.getElementById('cur-level-name').textContent = d.level_name;
+            // 重新加载文件列表
+            refreshFiles();
+            renderLevelCards();
+          }
+        })
+        .catch(function(){});
+    }
+    function showLevelToast(oldLv, newLv, newName){
+      var dir = newLv > oldLv ? '↑ 升级' : '↓ 降级';
+      document.getElementById('refresh-toast-msg').textContent =
+        dir + '：' + (LEVEL_INFO[oldLv].name) + ' → ' + newName + '，已自动应用';
+      document.getElementById('refresh-toast').classList.add('show');
+      document.getElementById('level-toast').style.display = 'flex';
+      setTimeout(function(){
+        document.getElementById('refresh-toast').classList.remove('show');
+      }, 6000);
+    }
+    function forceRefreshLevel(){
+      document.getElementById('level-toast').style.display = 'none';
+      location.reload();
+    }
+    // 每 8 秒自动检测一次
+    setInterval(checkLevelChange, 8000);
+
+    // ============= 4 级目录卡片 =============
+    function renderLevelCards(){
+      var grid = document.getElementById('level-grid');
+      var counts = {1:0, 2:0, 3:0, 4:0};
+      _allFiles.forEach(function(f){ counts[f.level_num] = (counts[f.level_num]||0) + 1; });
+      var html = '';
+      for(var lv=1; lv<=4; lv++){
+        var info = LEVEL_INFO[lv];
+        var accessible = lv <= _cli.level;
+        var cardStyle = accessible ? '' : 'opacity:.45;';
+        var stateText = accessible
+          ? (counts[lv] > 0 ? '📂 ' + counts[lv] + ' 个文件' : '（空）')
+          : '🔒 无权访问';
+        html += '<div class="level-card" style="'+cardStyle+'cursor:'+(accessible?'pointer':'default')+';" '+
+                (accessible?'onclick="filterByLevel('+lv+')"':'')+'>' +
+          '<div class="level-card-head">' +
+            '<div class="level-name">'+info.name+'</div>' +
+            '<div class="level-tag" style="background:'+info.color+';">'+info.tag+'</div>' +
+          '</div>' +
+          '<div class="level-path">'+info.path+'</div>' +
+          '<div class="level-count">'+ (accessible && counts[lv] ? counts[lv] : (accessible ? 0 : '—')) +'</div>' +
+          '<div class="level-state">'+stateText+'</div>' +
+        '</div>';
+      }
+      grid.innerHTML = html;
+    }
+
+    var _currentFilter = 0;
+    function filterByLevel(lv){
+      _currentFilter = lv;
+      document.getElementById('file-filter').textContent = '（' + LEVEL_INFO[lv].name + '）';
+      renderFileTable();
+    }
+    function loadAll(){
+      _currentFilter = 0;
+      document.getElementById('file-filter').textContent = '（全部）';
+      renderFileTable();
+    }
+
+    // ============= 文件列表 =============
+    function renderFileTable(){
+      var box = document.getElementById('files-list');
+      var list = _currentFilter ? _allFiles.filter(function(f){return f.level_num === _currentFilter;}) : _allFiles;
+      if(list.length === 0){
+        box.innerHTML = '<div class="empty"><div class="empty-icon">📂</div>该目录下暂无文件</div>';
+        return;
+      }
+      var rows = list.map(function(f){
+        var lvl = f.level_num;
+        return '<tr>' +
+          '<td style="font-weight:600;">📄 '+escapeHtml(f.name)+'</td>' +
+          '<td><span class="badge b-l'+lvl+'">'+escapeHtml(f.level)+'</span></td>' +
+          '<td style="color:var(--text-mute);">'+formatSize(f.size)+'</td>' +
+          '<td style="color:var(--text-mute);font-size:12px;">'+new Date(f.mtime*1000).toLocaleString('zh-CN')+'</td>' +
+          '<td style="text-align:right;">' +
+            '<button class="btn btn-sm btn-primary" onclick="quickDownload(\''+escapeHtml(f.name).replace(/'/g,"\\'")+'\',\''+escapeHtml(f.level)+'\')">⬇ 下载</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+      box.innerHTML = '<table><thead><tr>'+
+        '<th>文件名</th><th>级别</th><th>大小</th><th>修改时间</th><th style="text-align:right;">操作</th>'+
+        '</tr></thead><tbody>'+rows+'</tbody></table>';
+    }
+    function quickDownload(name, level){
+      switchTab('download');
+      // 选中下拉
+      var sel = document.getElementById('dl-file');
+      for(var i=0;i<sel.options.length;i++){
+        if(sel.options[i].value === name+'|'+level){ sel.value = name+'|'+level; break; }
+      }
+      doDownloadFlow();
+    }
+
+    function refreshFiles(){
+      fetch('/api/client/files?username='+encodeURIComponent(_cli.username))
+        .then(r=>r.json())
+        .then(function(list){
+          _allFiles = list;
+          document.getElementById('st-files').textContent = list.length;
+          renderLevelCards();
+          renderFileTable();
+          populateDownloadSelect();
+        })
+        .catch(function(){
+          showMsg('files-msg', '❌ 加载文件列表失败','error');
+        });
+    }
+    refreshFiles();
+
+    // ============= 下载流程：3 列可视化 =============
+    function populateDownloadSelect(){
+      var sel = document.getElementById('dl-file');
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">-- 请先选择文件 --</option>';
+      _allFiles.forEach(function(f){
+        var opt = document.createElement('option');
+        opt.value = f.name + '|' + f.level;
+        opt.textContent = '[' + f.level + '] ' + f.name + ' (' + formatSize(f.size) + ')';
+        sel.appendChild(opt);
+      });
+      if(cur) sel.value = cur;
+    }
+    function onDownloadFileChange(){
+      resetFlow();
+    }
+    function resetFlow(){
+      document.getElementById('plain-text').textContent = '点击「执行下载流程」开始演示';
+      document.getElementById('cipher-text').textContent = 'DES-CBC 加密后的密文（Base64 → Hex）';
+      document.getElementById('decrypt-text').textContent = '用密钥还原的明文';
+      document.getElementById('plain-size').textContent = '-- B';
+      document.getElementById('cipher-size').textContent = '-- B';
+      document.getElementById('decrypt-size').textContent = '-- B';
+      document.getElementById('info-level').textContent = '--';
+      document.getElementById('info-path').textContent = '--';
+      document.getElementById('info-plain-size').textContent = '-- B';
+      document.getElementById('info-cipher-size').textContent = '-- B';
+      document.querySelectorAll('.flow-step').forEach(function(s){
+        s.classList.remove('active','done');
+      });
+    }
+    function setStep(n, state){
+      var el = document.querySelector('.flow-step[data-step="'+n+'"]');
+      if(!el) return;
+      el.classList.remove('active','done');
+      if(state) el.classList.add(state);
+    }
+
+    function bytesToHex(arr){
+      var hex = '';
+      for(var i=0;i<arr.length;i++){
+        hex += arr[i].toString(16).padStart(2,'0').toUpperCase();
+        if((i+1) % 32 === 0) hex += '\n';
+        else if((i+1) % 4 === 0) hex += ' ';
+      }
+      return hex;
+    }
+
+    function doDownloadFlow(){
+      var sel = document.getElementById('dl-file');
+      var v = sel.value;
+      if(!v){
+        showMsg('dl-msg','❌ 请先选择文件','error');
+        return;
+      }
+      var parts = v.split('|');
+      var filename = parts[0];
+      var level = parts[1];
+
+      resetFlow();
+      var msgBox = document.getElementById('dl-msg');
+      msgBox.className = 'msg show msg-info';
+      msgBox.textContent = '⏳ 正在执行：读取密文...';
+
+      // 步骤 1：读取密文
+      setStep(1, 'active');
+      fetch('/api/client/download/cipher?username='+encodeURIComponent(_cli.username)+
+            '&filename='+encodeURIComponent(filename)+
+            '&level='+encodeURIComponent(level))
+        .then(r=>r.json())
+        .then(function(d){
+          if(d.error) throw new Error(d.error);
+
+          // 步骤 1 完成
+          setStep(1, 'done');
+          // 顶部信息
+          document.getElementById('info-level').textContent = level;
+          document.getElementById('info-path').textContent = 'ftp_root/'+level+'/'+d.filename;
+          document.getElementById('info-plain-size').textContent = d.plain_size + ' B';
+          document.getElementById('info-cipher-size').textContent = d.cipher_size + ' B';
+          document.getElementById('step1-path').textContent = 'ftp_root/'+level+'/'+d.filename;
+
+          // 列②：密文
+          document.getElementById('cipher-text').textContent = d.cipher_hex;
+          document.getElementById('cipher-size').textContent = d.cipher_size + ' B';
+
+          // 列①：明文
+          // 如果是 .enc，先去掉后缀显示
+          var displayName = d.filename;
+          if(displayName.endsWith('.enc')) displayName = displayName.slice(0,-4);
+          document.getElementById('plain-text').textContent =
+            '[原始文件] ' + displayName + '\n\n' +
+            '--- 服务器密文头 ---\n' +
+            '总长度: ' + d.plain_size + ' 字节\n' +
+            '密文大小: ' + d.cipher_size + ' 字节\n' +
+            '算法: ' + d.algorithm + '\n' +
+            '块大小: ' + d.chunk_size + ' B\n' +
+            '填充: ' + d.padding + '\n' +
+            '格式: ' + d.format + '\n\n' +
+            '--- 密文（HEX 形式，含 IV）---\n' + d.cipher_hex;
+          document.getElementById('plain-size').textContent = d.cipher_size + ' B (cipher)';
+
+          msgBox.textContent = '⏳ 正在执行：服务器解密...';
+          // 步骤 2、3：解密
+          setStep(2, 'done');
+          setStep(3, 'active');
+          return fetch('/api/client/download/decrypt', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({username: _cli.username, cipher: d.cipher_b64})
+          });
+        })
+        .then(r=>r.json())
+        .then(function(d){
+          if(d.error) throw new Error(d.error);
+
+          setStep(3, 'done');
+          // 列③：解密后
+          document.getElementById('decrypt-text').textContent = d.text;
+          document.getElementById('decrypt-size').textContent = d.size + ' B';
+
+          // 步骤 4：对比
+          setStep(4, 'active');
+          msgBox.textContent = '⏳ 校验加解密一致性...';
+          // 让浏览器真的"下载"文件
+          return fetch('/api/client/download/file?username='+encodeURIComponent(_cli.username)+
+                       '&filename='+encodeURIComponent(filename)+
+                       '&level='+encodeURIComponent(level));
+        })
+        .then(function(resp){
+          setStep(4, 'done');
+          if(resp.ok){
+            // 触发浏览器下载
+            var blob = resp.blob();
+            blob.then(function(b){
+              var url = URL.createObjectURL(b);
+              var a = document.createElement('a');
+              var baseName = filename.endsWith('.enc') ? filename.slice(0,-4) : filename;
+              a.href = url;
+              a.download = baseName;
+              a.click();
+              URL.revokeObjectURL(url);
+            });
+          }
+          msgBox.className = 'msg show msg-ok';
+          msgBox.textContent = '✅ 流程完成：明文 → 密文 → 解密 → 浏览器下载还原文件';
+        })
+        .catch(function(err){
+          msgBox.className = 'msg show msg-err';
+          msgBox.textContent = '❌ ' + (err.message || '流程失败');
+        });
+    }
+
+    // ============= 上传 =============
+    var drop = document.getElementById('drop');
+    ['dragenter','dragover'].forEach(function(e){
+      drop.addEventListener(e, function(ev){ev.preventDefault();drop.classList.add('drag');});
+    });
+    ['dragleave','drop'].forEach(function(e){
+      drop.addEventListener(e, function(ev){ev.preventDefault();drop.classList.remove('drag');});
+    });
+    drop.addEventListener('drop', function(ev){
+      if(ev.dataTransfer.files.length > 0) doUpload(ev.dataTransfer.files[0]);
+    });
+    function doUpload(f){
+      if(!f) return;
+      if(f.size > 50*1024*1024){ alert('文件不得超过 50MB'); return; }
+      var upStatus = document.getElementById('up-status');
+      upStatus.style.display = 'block';
+      document.getElementById('up-name').textContent = f.name;
+      document.getElementById('up-pct').textContent = '0%';
+      document.getElementById('up-bar').style.width = '0%';
+      document.getElementById('up-detail').textContent = '上传中…';
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST','/api/upload', true);
+      xhr.upload.onprogress = function(e){
+        if(e.lengthComputable){
+          var p = Math.round(e.loaded/e.total*100);
+          document.getElementById('up-pct').textContent = p + '%';
+          document.getElementById('up-bar').style.width = p + '%';
+        }
+      };
+      xhr.onload = function(){
+        try{
+          var d = JSON.parse(xhr.responseText);
+          if(d.success){
+            document.getElementById('up-pct').textContent = '100%';
+            document.getElementById('up-bar').style.width = '100%';
+            document.getElementById('up-detail').innerHTML =
+              '✅ 已加密存为 <span class="mono">'+escapeHtml(d.stored_path||'')+'</span><br>'+
+              '💾 密文 '+formatSize(d.encrypted_size||0)+' · 解密副本 '+formatSize(d.decrypted_size||0);
+            showMsg('up-msg','✅ 上传并加密成功：'+d.filename,'success');
+            refreshFiles();
+          } else {
+            document.getElementById('up-detail').textContent = '❌ ' + (d.msg||'上传失败');
+            showMsg('up-msg','❌ '+(d.msg||'上传失败'),'error');
+          }
+        }catch(e){
+          document.getElementById('up-detail').textContent = '❌ 响应解析失败';
+        }
+      };
+      xhr.onerror = function(){
+        showMsg('up-msg','❌ 网络错误','error');
+        document.getElementById('up-detail').textContent = '❌ 网络错误';
+      };
+      var fd = new FormData();
+      fd.append('file', f);
+      fd.append('username', _cli.username);
+      xhr.send(fd);
+    }
+
+    // ============= 权限提升申请 =============
+    function requestLvUp(e){
+      e.preventDefault();
+      var lv = parseInt(document.getElementById('lvl-target').value);
+      var reason = document.getElementById('lvl-reason').value.trim();
+      fetch('/api/client/request-level-up', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username:_cli.username, target_level:lv, reason:reason})
+      }).then(r=>r.json()).then(function(d){
+        if(d.success){
+          showMsg('lvl-msg','✅ 申请已提交，等待管理员审批','success');
+          document.getElementById('lvl-reason').value='';
+        } else {
+          showMsg('lvl-msg','❌ '+(d.msg||'提交失败'),'error');
+        }
+      });
+      return false;
+    }
+
+    // ============= 修改密码 =============
+    function changePw(e){
+      e.preventDefault();
+      var oldp = document.getElementById('pw-old').value;
+      var newp = document.getElementById('pw-new').value;
+      fetch('/api/client/change-password', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({username:_cli.username, old_password:oldp, new_password:newp})
+      }).then(r=>r.json()).then(function(d){
+        if(d.success){
+          showMsg('pw-msg','✅ 密码修改成功','success');
+          document.getElementById('pw-old').value='';
+          document.getElementById('pw-new').value='';
+        } else {
+          showMsg('pw-msg','❌ '+(d.msg||'修改失败'),'error');
+        }
+      });
+      return false;
+    }
+  </script>
+</body>
+</html>
