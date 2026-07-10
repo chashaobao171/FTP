@@ -490,9 +490,13 @@
         body: JSON.stringify({filename:name, level:level})
       }).then(r=>r.json()).then(function(d){
         if(d.success){
-          showMsg('files-msg','🗑️ 已删除','info');
+          showMsg('files-msg','🗑️ 已删除 '+name,'info');
           refreshFiles();
+        } else {
+          showMsg('files-msg','❌ 删除失败: '+(d.msg||'未知错误'),'error');
         }
+      }).catch(function(err){
+        showMsg('files-msg','❌ 请求失败: '+err,'error');
       });
     });
     refreshFiles();

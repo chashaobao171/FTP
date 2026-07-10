@@ -624,7 +624,12 @@ def api_all_files():
 
 @app.route('/api/files/delete', methods=['POST'])
 def api_delete_file():
-    """客户端/管理员用：删除 ftp_root/<level>/<name> 下的密文文件。"""
+    """客户端/管理员用：删除 ftp_root/<level>/<name> 下的密文文件。
+
+    权限规则：
+      - 前端不传 username（或 username 为空）→ 视为管理员调用，直接放行
+      - 否则：客户端只能删自己等级及以下的文件
+    """
     data = request.json or {}
     username = data.get('username', '').strip()
     level_name = data.get('level', '').strip()
@@ -636,6 +641,9 @@ def api_delete_file():
     # 客户端只能删自己等级及以下；管理员可删任意
     admin_user = us.get_admin_username()
     is_admin = bool(admin_user and username == admin_user)
+    # 未带 username 一律视为管理员调用（admin.html 场景）
+    if username == '':
+        is_admin = True
     if not is_admin and not can_access(username, level_name):
         return jsonify({'success': False, 'msg': '权限不足'})
 
