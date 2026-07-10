@@ -388,7 +388,7 @@
   <div class="modal-bg" id="modal-delete">
     <div class="modal">
       <h3 class="modal-title">⚠️ 确认删除</h3>
-      <p class="modal-sub">用户 <b id="modal-del-user" style="color:var(--danger);">--</b> 的账号和文件将一并清理</p>
+      <p class="modal-sub">用户 <b id="modal-del-user" style="color:var(--danger);">--</b> 将被软删除（可重新注册恢复）</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="btn btn-ghost" onclick="closeModal('modal-delete')">取消</button>
         <button class="btn btn-danger" onclick="confirmDelete()">🗑️ 确认删除</button>
@@ -398,6 +398,7 @@
 
   <script>
     var _approve_username = '';
+    var _approve_status = '';
     var _delete_username = '';
     var _level_username = '';
     var _level_target = 2;
@@ -556,8 +557,15 @@
         }
         body.innerHTML = list.map(function(u){
           var isAdmin = u.username === (_admin && _admin.username);
-          var ops = '<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">' +
-            '<button class="btn btn-sm btn-primary" onclick="showApprove(\''+u.username+'\')">🔧 设级别</button>' +
+          var isPending = u.status === 'pending';
+        var isApproved = u.status === 'approved';
+        var opBtn = isPending
+          ? '<button class="btn btn-sm" style="background:#16a34a;color:#fff;" onclick="showApprove(\''+u.username+'\',\'pending\')">✅ 批准</button>'
+          : (isApproved
+            ? '<button class="btn btn-sm btn-primary" onclick="showApprove(\''+u.username+'\',\'approved\')">🔧 改级别</button>'
+            : '<button class="btn btn-sm btn-ghost" disabled>—</button>');
+        var ops = '<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">' +
+            opBtn +
             '<button class="btn btn-sm btn-danger" onclick="showDelete(\''+u.username+'\')">🗑️ 删除</button>' +
           '</div>';
           return '<tr>' +
@@ -572,26 +580,33 @@
       });
     }
 
-    function showApprove(username){
+    function showApprove(username, status){
       _approve_username = username;
+      _approve_status = status || 'approved';
       document.getElementById('modal-user').textContent = username;
-      // 默认设为管理员当前正在改的等级
+      var titleEl = document.getElementById('modal-approve').querySelector('.modal-title');
+      titleEl.textContent = _approve_status === 'pending' ? '✅ 批准注册' : '🔧 设置用户等级';
       document.getElementById('modal-level').value = '2';
       document.getElementById('modal-approve').classList.add('show');
     }
     function closeModal(id){ document.getElementById(id).classList.remove('show'); }
     function confirmApprove(){
       var level = parseInt(document.getElementById('modal-level').value);
-      fetch('/api/users/approve', {
+      var endpoint = _approve_status === 'pending' ? '/api/users/approve' : '/api/users/set-level';
+      var payload = _approve_status === 'pending'
+        ? {username:_approve_username, action:'approve', level:level}
+        : {username:_approve_username, level:level};
+      fetch(endpoint, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({username:_approve_username, action:'approve', level:level})
+        body: JSON.stringify(payload)
       }).then(r=>r.json()).then(function(d){
         closeModal('modal-approve');
         if(d.success){
-          showMsg('users-msg','✅ 已批准 '+_approve_username+' 为 Lv'+level+'（用户端 8 秒内自动同步）','success');
+          var label = _approve_status === 'pending' ? '已批准' : '已更新';
+          showMsg('users-msg','✅ '+label+' '+_approve_username+' 为 Lv'+level+'（用户端 8 秒内自动同步）','success');
           refreshUsers();
         } else {
-          showMsg('users-msg','❌ 操作失败: '+d.msg,'error');
+          showMsg('users-msg','❌ 操作失败: '+(d.msg||''),'error');
         }
       });
     }
