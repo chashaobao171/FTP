@@ -699,8 +699,25 @@
     }
 
     function refreshFiles(){
-      fetch('/api/client/files?username='+encodeURIComponent(_cli.username))
+      // 先同步服务端最新等级，避免 localStorage 中的旧等级导致目录卡可点击范围错误
+      fetch('/api/client/info?username='+encodeURIComponent(_cli.username))
         .then(r=>r.json())
+        .then(function(info){
+          if(info.success && info.level !== _cli.level){
+            _cli.level = info.level;
+            _cli.level_name = info.level_name;
+            localStorage.setItem('ftp_client', JSON.stringify(_cli));
+            // 顶部条实时更新
+            document.getElementById('user-level').textContent = info.level_name;
+            document.getElementById('st-level').textContent = info.level_name;
+            document.getElementById('st-level-extra').textContent = LEVEL_INFO[info.level].desc;
+          }
+        })
+        .catch(function(){})
+        .then(function(){  // 等级同步完再加载文件
+          return fetch('/api/client/files?username='+encodeURIComponent(_cli.username));
+        })
+        .then(function(r){ return r.json(); })
         .then(function(list){
           _allFiles = list;
           document.getElementById('st-files').textContent = list.length;
@@ -709,7 +726,7 @@
           populateDownloadSelect();
         })
         .catch(function(){
-          showMsg('files-msg', '❌ 加载文件列表失败','error');
+          showMsg('files-msg', '\u2757\u274c \u52a0\u8f7d\u6587\u4ef6\u5217\u8868\u5931\u8d25','error');
         });
     }
     refreshFiles();
