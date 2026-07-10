@@ -4,7 +4,7 @@
     "password": "2cfb9d8bface326ee0f4361b03013b1673775285c71141ec89913b48f55e9a08",
     "email": "new1@x.com",
     "level": 1,
-    "status": "pending",
+    "status": "deleted",
     "apply_time": "2026-07-10 11:32:38",
     "cipher_pw": "Yi0hOe73lNOKDif94DXXsUn6IDZha+RB"
   },
@@ -21,8 +21,8 @@
     "username": "client3",
     "password": "36476d664af033cd79ba16863f1a098db810aaea675fb0c675dbc7bc9b4f52d4",
     "email": "new3@x.com",
-    "level": 1,
-    "status": "pending",
+    "level": 2,
+    "status": "deleted",
     "apply_time": "2026-07-10 11:32:38",
     "cipher_pw": "Yi0hOe73lNOVAg0bu9L8fHgw7dkffaB5"
   },
@@ -58,5 +58,14 @@
     "status": "deleted",
     "apply_time": "2026-07-10 11:29:53",
     "cipher_pw": "Yi0hOe73lNOKQaXsEDQ2xw=="
+  },
+  "222": {
+    "username": "222",
+    "password": "fbfb386efea67e816f2dda0a8c94a98eb203757aebb3f55f183755a192d44467",
+    "email": "596348079@qq.com",
+    "level": 1,
+    "status": "approved",
+    "apply_time": "2026-07-10 11:43:25",
+    "cipher_pw": "Yi0hOe73lNOhVGSyN8y2BQ=="
   }
 }
